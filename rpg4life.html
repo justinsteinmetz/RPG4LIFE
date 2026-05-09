@@ -1,0 +1,1418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RPG4LIFE</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap');
+
+:root {
+  --bg:        #0d0f0a;
+  --deep:      #111308;
+  --panel:     #161810;
+  --lift:      #1c1f12;
+  --border:    #2a2e1a;
+  --border-hi: #3a4020;
+  --text:      #d8e0b0;
+  --muted:     #788050;
+  --faint:     #3a4025;
+  --dim:       #222518;
+
+  /* The green — terminal/RPG */
+  --green:     #7ab828;
+  --green-dim: rgba(122,184,40,0.08);
+  --green-b:   rgba(122,184,40,0.25);
+  --green-hi:  #9fd040;
+
+  /* Assigned — amber (inherited, not chosen) */
+  --amber:     #c8820a;
+  --amber-dim: rgba(200,130,10,0.08);
+  --amber-b:   rgba(200,130,10,0.25);
+
+  /* Chosen — cyan */
+  --cyan:      #2a9ab8;
+  --cyan-dim:  rgba(42,154,184,0.08);
+  --cyan-b:    rgba(42,154,184,0.25);
+
+  /* Stat bars */
+  --stat-bg:   #1a1d10;
+
+  /* Reading — warm paper break */
+  --read-bg:   #f2ede4;
+  --read-text: #1a1610;
+  --read-muted:#7a6a50;
+  --read-sepia:#8b6030;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 400;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Scanlines */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 3px,
+    rgba(0,0,0,0.07) 3px, rgba(0,0,0,0.07) 4px
+  );
+  pointer-events: none; z-index: 0;
+}
+
+/* Vignette */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background: radial-gradient(ellipse at 50% 40%, transparent 30%, rgba(0,0,0,0.6) 100%);
+  pointer-events: none; z-index: 0;
+}
+
+.screen { display: none; position: relative; z-index: 1; }
+.screen.active { display: flex; }
+
+/* Progress */
+.prog-wrap {
+  position: fixed; top: 0; left: 0; right: 0;
+  height: 2px; background: var(--faint); z-index: 200;
+}
+.prog-fill {
+  height: 100%; background: var(--green);
+  transition: width 0.7s ease; width: 0%;
+  box-shadow: 0 0 8px var(--green);
+}
+
+/* ── INTRO ── */
+#intro {
+  min-height: 100vh; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: clamp(2rem, 6vw, 5rem); text-align: center;
+}
+
+.intro-sys {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.52rem; letter-spacing: 0.28em;
+  text-transform: uppercase; color: var(--muted);
+  margin-bottom: 2rem;
+}
+
+.intro-title {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: clamp(3.5rem, 12vw, 8rem);
+  line-height: 0.88; letter-spacing: 0.08em;
+  color: var(--green);
+  text-shadow: 0 0 40px rgba(122,184,40,0.3);
+  margin-bottom: 0.3rem;
+  animation: flicker 6s ease-in-out infinite;
+}
+
+@keyframes flicker {
+  0%,100% { opacity: 1; }
+  92% { opacity: 1; }
+  93% { opacity: 0.92; }
+  94% { opacity: 1; }
+  97% { opacity: 0.95; }
+  98% { opacity: 1; }
+}
+
+.intro-tagline {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.6rem; letter-spacing: 0.18em;
+  color: var(--muted); margin-bottom: 3rem;
+}
+
+.intro-premise {
+  font-size: 1rem; line-height: 1.9;
+  color: var(--muted); max-width: 440px;
+  margin: 0 auto 2.5rem; font-weight: 300;
+}
+.intro-premise strong { color: var(--text); font-weight: 600; }
+
+/* Legend */
+.intro-legend {
+  display: flex; gap: 1.5rem; justify-content: center;
+  margin-bottom: 3rem; flex-wrap: wrap;
+}
+.legend-item {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.52rem; letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.legend-dot {
+  width: 8px; height: 8px; border-radius: 1px; flex-shrink: 0;
+}
+.legend-dot.assigned { background: var(--amber); }
+.legend-dot.chosen { background: var(--cyan); }
+.legend-item.assigned { color: var(--amber); }
+.legend-item.chosen { color: var(--cyan); }
+
+.begin-btn {
+  background: transparent;
+  border: 1px solid var(--green);
+  color: var(--green);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.65rem; letter-spacing: 0.22em;
+  text-transform: uppercase; padding: 0.85rem 2.5rem;
+  cursor: pointer; transition: all 0.2s;
+  box-shadow: 0 0 20px rgba(122,184,40,0.1);
+}
+.begin-btn:hover {
+  background: var(--green); color: var(--bg);
+  box-shadow: 0 0 40px rgba(122,184,40,0.3);
+}
+
+/* ── SHEET SCREEN ── */
+#sheet {
+  min-height: 100vh; flex-direction: column;
+  padding: clamp(2rem, 5vw, 4rem) clamp(1.5rem, 4vw, 3rem);
+  max-width: 860px; margin: 0 auto; width: 100%;
+}
+
+.sheet-hud {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 2rem; padding-bottom: 0.8rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.hud-title {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.52rem; letter-spacing: 0.22em;
+  text-transform: uppercase; color: var(--muted);
+}
+
+.hud-id {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.48rem; letter-spacing: 0.14em; color: var(--faint);
+}
+
+/* Section headers */
+.sheet-section {
+  margin-bottom: 2.5rem;
+}
+
+.section-header {
+  display: flex; align-items: center; gap: 0.8rem;
+  margin-bottom: 1rem; padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.section-tag {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.46rem; letter-spacing: 0.2em;
+  text-transform: uppercase; padding: 0.15rem 0.5rem;
+  border: 1px solid;
+}
+.section-tag.assigned { color: var(--amber); border-color: var(--amber-b); background: var(--amber-dim); }
+.section-tag.chosen   { color: var(--cyan);  border-color: var(--cyan-b);  background: var(--cyan-dim); }
+.section-tag.both     { color: var(--green); border-color: var(--green-b); background: var(--green-dim); }
+
+.section-title {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600; font-size: 1rem;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text);
+}
+
+.section-desc {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.48rem; letter-spacing: 0.1em;
+  color: var(--muted); margin-left: auto;
+}
+
+/* ── CLASSES ── */
+.classes-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.5rem;
+}
+
+.class-card {
+  background: var(--panel); border: 1px solid var(--border);
+  padding: 0.7rem 0.9rem; cursor: pointer;
+  transition: all 0.18s; position: relative;
+}
+
+.class-card:hover { border-color: var(--border-hi); }
+
+.class-card.assigned-class {
+  border-color: var(--amber-b); background: var(--amber-dim);
+  cursor: default;
+}
+
+.class-card.chosen-class.selected {
+  border-color: var(--cyan-b); background: var(--cyan-dim);
+}
+
+.class-card-icon {
+  width: 16px; height: 16px;
+  margin-bottom: 0.5rem; display: block;
+}
+.assigned-class .class-card-icon { color: var(--amber); }
+.chosen-class .class-card-icon { color: var(--cyan); }
+
+.class-card-name {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600; font-size: 0.88rem;
+  letter-spacing: 0.06em; color: var(--text);
+  margin-bottom: 0.2rem;
+}
+
+.class-card.assigned-class .class-card-name { color: var(--amber); }
+.class-card.chosen-class.selected .class-card-name { color: var(--cyan); }
+
+.class-card-desc {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.44rem; letter-spacing: 0.06em;
+  color: var(--muted); line-height: 1.5;
+}
+
+.class-card-badge {
+  position: absolute; top: 0.4rem; right: 0.5rem;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.38rem; letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.assigned-class .class-card-badge { color: var(--amber); }
+.chosen-class.selected .class-card-badge { color: var(--cyan); }
+
+/* ── STATS ── */
+.stats-grid { display: flex; flex-direction: column; gap: 0.6rem; }
+
+.stat-row {
+  display: grid; grid-template-columns: 110px 1fr 2.5rem;
+  align-items: center; gap: 0.8rem;
+}
+
+.stat-name {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.52rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--muted);
+}
+
+.stat-bar-wrap { height: 6px; background: var(--stat-bg); position: relative; }
+
+.stat-bar-fill {
+  height: 100%; background: var(--green);
+  transition: width 0.3s ease;
+  box-shadow: 0 0 6px rgba(122,184,40,0.4);
+}
+
+.stat-bar-fill.assigned-fill { background: var(--amber); box-shadow: 0 0 6px rgba(200,130,10,0.4); }
+
+input[type=range].stat-slider {
+  position: absolute; top: 50%; left: 0; right: 0;
+  transform: translateY(-50%);
+  width: 100%; opacity: 0; cursor: pointer; height: 20px; margin: 0;
+}
+
+.stat-val {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.6rem; color: var(--green); text-align: right;
+}
+.stat-val.assigned-val { color: var(--amber); }
+
+/* ── TEXT FIELDS ── */
+.rpg-field { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1rem; }
+
+.field-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.48rem; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--muted);
+  display: flex; align-items: center; gap: 0.5rem;
+}
+.field-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+.rpg-input {
+  width: 100%; background: var(--panel); border: 1px solid var(--border);
+  border-left: 3px solid var(--green);
+  color: var(--text); font-family: 'Rajdhani', sans-serif;
+  font-weight: 400; font-size: 0.9rem; letter-spacing: 0.04em;
+  padding: 0.65rem 0.9rem; outline: none; resize: none;
+  transition: border-color 0.2s;
+  line-height: 1.7;
+}
+.rpg-input:focus { border-color: var(--border-hi); border-left-color: var(--green); }
+.rpg-input::placeholder { color: var(--faint); font-style: italic; }
+
+.rpg-input.assigned-input { border-left-color: var(--amber); background: var(--amber-dim); }
+.rpg-input.chosen-input   { border-left-color: var(--cyan); }
+
+.field-hint {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.42rem; letter-spacing: 0.1em;
+  color: var(--faint); min-height: 1em;
+}
+
+/* Debuffs list */
+.debuff-list { display: flex; flex-direction: column; gap: 0.4rem; }
+.debuff-item {
+  display: flex; gap: 0.6rem; align-items: flex-start;
+  padding: 0.5rem 0.8rem; background: var(--panel);
+  border: 1px solid var(--border);
+}
+.debuff-type {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.44rem; letter-spacing: 0.1em;
+  text-transform: uppercase; flex-shrink: 0;
+  padding-top: 0.1rem;
+}
+.debuff-type.assigned { color: var(--amber); }
+.debuff-type.chosen   { color: var(--cyan); }
+
+.debuff-text {
+  font-size: 0.82rem; color: var(--muted); line-height: 1.6; flex: 1;
+}
+
+/* Nav */
+.sheet-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 2.5rem; padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.nav-note {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.44rem; letter-spacing: 0.1em; color: var(--faint);
+}
+
+.sheet-btn {
+  background: transparent; border: 1px solid var(--border);
+  color: var(--muted); font-family: 'Share Tech Mono', monospace;
+  font-size: 0.52rem; letter-spacing: 0.18em; text-transform: uppercase;
+  padding: 0.55rem 1.2rem; cursor: pointer; transition: all 0.18s;
+}
+.sheet-btn:hover { border-color: var(--green); color: var(--green); }
+.sheet-btn:disabled { opacity: 0.15; cursor: default; pointer-events: none; }
+.sheet-btn.primary {
+  background: var(--green); color: var(--bg);
+  border-color: var(--green);
+  box-shadow: 0 0 16px rgba(122,184,40,0.2);
+}
+.sheet-btn.primary:hover { background: var(--green-hi); box-shadow: 0 0 28px rgba(122,184,40,0.35); }
+
+/* Processing */
+.processing {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.48rem; letter-spacing: 0.18em; color: var(--muted); text-transform: uppercase;
+}
+.dots-inline { display: inline-flex; gap: 0.25rem; margin-left: 0.35rem; vertical-align: middle; }
+.dots-inline span {
+  width: 3px; height: 3px; background: var(--green); border-radius: 50%;
+  animation: dp 1.2s ease-in-out infinite;
+}
+.dots-inline span:nth-child(2) { animation-delay: 0.2s; }
+.dots-inline span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes dp {
+  0%,100% { opacity: 0.2; transform: scale(0.7); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+/* ── READING SCREEN ── */
+#reading {
+  min-height: 100vh; flex-direction: column; justify-content: center;
+  padding: clamp(2rem, 6vw, 5rem);
+}
+.reading-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.5rem; letter-spacing: 0.32em;
+  color: var(--muted); text-transform: uppercase; margin-bottom: 1.5rem;
+}
+.reading-dots { display: flex; gap: 0.4rem; }
+.reading-dots span {
+  width: 5px; height: 5px; border-radius: 1px; background: var(--green);
+  animation: dp 1.4s ease-in-out infinite;
+}
+.reading-dots span:nth-child(2) { animation-delay: 0.25s; }
+.reading-dots span:nth-child(3) { animation-delay: 0.5s; }
+
+/* ── RESULT SCREEN ── */
+#result {
+  min-height: 100vh; flex-direction: column; justify-content: flex-start;
+  padding: clamp(3.5rem, 7vw, 6rem) clamp(1.5rem, 5vw, 4rem) 6rem;
+  max-width: 760px; margin: 0 auto; width: 100%;
+  background: var(--read-bg);
+}
+
+.result-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 3rem; padding-bottom: 1rem;
+  border-bottom: 1px solid #d0c8b8;
+}
+
+.result-title {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700; font-size: 1.2rem;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--read-text);
+}
+
+.result-stamp {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.42rem; letter-spacing: 0.1em;
+  color: #b0a888; text-align: right; line-height: 2; white-space: pre;
+}
+
+/* Sheet summary */
+.sheet-summary {
+  border: 1px solid #d0c8b8; margin-bottom: 3rem;
+  opacity: 0; transition: opacity 1s ease;
+}
+.sheet-summary.visible { opacity: 1; }
+
+.summary-section {
+  border-bottom: 1px solid #d8d0c0;
+}
+.summary-section:last-child { border-bottom: none; }
+
+.summary-header {
+  padding: 0.5rem 1.2rem; background: #ece6d8;
+  border-bottom: 1px solid #d8d0c0;
+  display: flex; justify-content: space-between;
+}
+
+.summary-header-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.44rem; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--read-muted);
+}
+
+.summary-body {
+  padding: 0.75rem 1.2rem; background: #f8f2e8;
+  font-family: 'DM Serif Display', serif;
+  font-size: 0.9rem; line-height: 1.75;
+  color: var(--read-text); white-space: pre-wrap;
+}
+
+/* Portrait */
+.result-rule {
+  width: 0; height: 1px; background: var(--read-sepia);
+  margin-bottom: 2.5rem;
+  opacity: 0; transition: opacity 0.6s ease, width 1.2s ease 0.3s;
+}
+.result-rule.visible { opacity: 1; width: 100%; }
+
+.portrait-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.46rem; letter-spacing: 0.26em;
+  text-transform: uppercase; color: var(--read-sepia);
+  margin-bottom: 1.2rem;
+  opacity: 0; transition: opacity 0.6s ease;
+}
+.portrait-label.visible { opacity: 1; }
+
+.portrait-headline {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(1.6rem, 4vw, 2.8rem);
+  line-height: 1.2; color: var(--read-text);
+  margin-bottom: 1.5rem;
+  opacity: 0; transition: opacity 0.8s ease;
+}
+.portrait-headline.visible { opacity: 1; }
+
+.portrait-body {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(0.95rem, 1.8vw, 1.1rem);
+  line-height: 2.1; color: var(--read-text);
+  white-space: pre-wrap;
+  opacity: 0; transition: opacity 1.2s ease;
+}
+.portrait-body.visible { opacity: 1; }
+
+.portrait-sig {
+  font-family: 'DM Serif Display', serif;
+  font-style: italic; font-size: clamp(0.9rem, 1.6vw, 1rem);
+  line-height: 1.9; color: var(--read-sepia);
+  border-left: 1px solid #d0c8b8; padding-left: 1.2rem;
+  margin-top: 1.5rem;
+  opacity: 0; transition: opacity 0.8s ease;
+}
+.portrait-sig.visible { opacity: 1; }
+
+.disc-wrap {
+  margin-top: 2.5rem; border: 1px solid #d0c8b8;
+  opacity: 0; transition: opacity 0.8s ease;
+}
+.disc-wrap.visible { opacity: 1; }
+
+.disc-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.55rem 1.2rem; background: #ece6d8;
+  border-bottom: 1px solid #d0c8b8; flex-wrap: wrap; gap: 0.4rem;
+}
+.disc-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.44rem; letter-spacing: 0.22em;
+  text-transform: uppercase; color: var(--read-muted);
+}
+.disc-note {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.4rem; color: #b0a888; letter-spacing: 0.1em;
+}
+.disc-item {
+  display: flex; gap: 0.8rem; align-items: flex-start;
+  padding: 0.8rem 1.2rem; border-bottom: 1px solid #d8d0c0;
+  background: #f8f2e8;
+}
+.disc-item:last-child { border-bottom: none; }
+.disc-num {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.42rem; color: #b0a888; flex-shrink: 0; padding-top: 0.2rem;
+}
+.disc-q {
+  font-family: 'DM Serif Display', serif;
+  font-size: 0.92rem; color: var(--read-text); line-height: 1.7;
+}
+
+.result-footer {
+  margin-top: 3.5rem; padding-top: 1.5rem;
+  border-top: 1px solid #d0c8b8;
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 0.8rem;
+  opacity: 0; transition: opacity 0.8s ease;
+}
+.result-footer.visible { opacity: 1; }
+.footer-note {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.44rem; letter-spacing: 0.1em; color: #b0a888; font-style: italic;
+}
+.footer-btns { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+.result-btn {
+  background: transparent; border: 1px solid #d0c8b8;
+  color: var(--read-muted); font-family: 'Share Tech Mono', monospace;
+  font-size: 0.5rem; letter-spacing: 0.18em; text-transform: uppercase;
+  padding: 0.5rem 1rem; cursor: pointer; transition: all 0.2s;
+}
+.result-btn:hover { border-color: var(--read-sepia); color: var(--read-sepia); }
+
+@media (max-width: 600px) {
+  .classes-grid { grid-template-columns: 1fr 1fr; }
+  .stat-row { grid-template-columns: 80px 1fr 2rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="prog-wrap"><div class="prog-fill" id="progFill"></div></div>
+
+<!-- INTRO -->
+<div id="intro" class="screen active">
+  <div class="intro-sys">Identity &amp; Society · Grades 11–12 · Character Build</div>
+  <div class="intro-title">RPG4LIFE</div>
+  <div class="intro-tagline">// Some roles were assigned. Some were chosen. Most became part of you through repetition.</div>
+
+  <p class="intro-premise">
+    Identity is not a fixed trait.<br>
+    It is a <strong>build</strong> — assembled from roles assigned by others,<br>
+    choices made under constraint,<br>
+    and scripts repeated until they feel like personality.<br><br>
+    You will complete a character sheet.<br>
+    Some of it is already filled in.
+  </p>
+
+  <div class="intro-legend">
+    <div class="legend-item assigned"><div class="legend-dot assigned"></div>Assigned — inherited, not chosen</div>
+    <div class="legend-item chosen"><div class="legend-dot chosen"></div>Chosen — selected by you</div>
+  </div>
+
+  <button class="begin-btn" onclick="beginSheet()">Open character sheet →</button>
+</div>
+
+<!-- CHARACTER SHEET -->
+<div id="sheet" class="screen">
+  <div class="sheet-hud">
+    <div class="hud-title">Character Sheet // RPG4LIFE</div>
+    <div class="hud-id" id="charId"></div>
+  </div>
+
+  <!-- SECTION 1: CLASSES -->
+  <div class="sheet-section">
+    <div class="section-header">
+      <span class="section-tag assigned">Assigned</span>
+      <span class="section-title">Primary Class</span>
+      <span class="section-desc">Your role in the family — determined before you could choose</span>
+    </div>
+    <div class="classes-grid" id="primaryClassGrid"></div>
+  </div>
+
+  <div class="sheet-section">
+    <div class="section-header">
+      <span class="section-tag chosen">Chosen</span>
+      <span class="section-title">Secondary Classes</span>
+      <span class="section-desc">Select up to 3 — roles you have taken on or built</span>
+    </div>
+    <div class="classes-grid" id="secondaryClassGrid"></div>
+  </div>
+
+  <!-- SECTION 2: STATS -->
+  <div class="sheet-section">
+    <div class="section-header">
+      <span class="section-tag assigned">Assigned</span>
+      <span class="section-title">Base Stats</span>
+      <span class="section-desc">Set by early experience — adjust to reflect how they actually landed</span>
+    </div>
+    <div class="stats-grid" id="assignedStatsGrid"></div>
+  </div>
+
+  <div class="sheet-section">
+    <div class="section-header">
+      <span class="section-tag chosen">Chosen</span>
+      <span class="section-title">Developed Stats</span>
+      <span class="section-desc">Traits you have built — drag to set</span>
+    </div>
+    <div class="stats-grid" id="chosenStatsGrid"></div>
+  </div>
+
+  <!-- SECTION 3: INVENTORY -->
+  <div class="sheet-section">
+    <div class="section-header">
+      <span class="section-tag both">Both</span>
+      <span class="section-title">Inventory</span>
+      <span class="section-desc">What you carry — given and acquired</span>
+    </div>
+    <div class="rpg-field">
+      <div class="field-label">What were you given that you still carry?</div>
+      <textarea class="rpg-input assigned-input" id="inventoryAssigned" rows="2"
+        placeholder="A belief, an expectation, a fear, a name, a way of being…" oninput="checkSubmit()"></textarea>
+    </div>
+    <div class="rpg-field">
+      <div class="field-label">What have you acquired that wasn't given?</div>
+      <textarea class="rpg-input chosen-input" id="inventoryChosen" rows="2"
+        placeholder="Skills, habits, a perspective, something you built yourself…" oninput="checkSubmit()"></textarea>
+    </div>
+  </div>
+
+  <!-- SECTION 4: BUFFS & DEBUFFS -->
+  <div class="sheet-section">
+    <div class="section-header">
+      <span class="section-tag both">Both</span>
+      <span class="section-title">Buffs &amp; Debuffs</span>
+      <span class="section-desc">Advantages and costs attached to your build</span>
+    </div>
+    <div class="rpg-field">
+      <div class="field-label">Name a buff — something your build gives you that others don't automatically have</div>
+      <textarea class="rpg-input chosen-input" id="buffField" rows="2"
+        placeholder="A social advantage, a skill, access, confidence, a network…" oninput="checkSubmit()"></textarea>
+    </div>
+    <div class="rpg-field">
+      <div class="field-label">Name a debuff — a hidden cost of playing this build</div>
+      <textarea class="rpg-input assigned-input" id="debuffField" rows="2"
+        placeholder="A constraint, a burden, something that drains, a role that costs you…" oninput="checkSubmit()"></textarea>
+    </div>
+  </div>
+
+  <!-- SECTION 5: ACTIVE QUEST & RESPEC -->
+  <div class="sheet-section">
+    <div class="section-header">
+      <span class="section-tag chosen">Chosen</span>
+      <span class="section-title">Active Quest</span>
+      <span class="section-desc">What you are currently trying to do or become</span>
+    </div>
+    <div class="rpg-field">
+      <div class="field-label">Current quest</div>
+      <textarea class="rpg-input chosen-input" id="questField" rows="2"
+        placeholder="What are you working toward, building, or trying to prove?" oninput="checkSubmit()"></textarea>
+    </div>
+    <div class="rpg-field">
+      <div class="field-label">Attempted respec — something about your build you are trying to change</div>
+      <textarea class="rpg-input chosen-input" id="respecField" rows="2"
+        placeholder="A role you are trying to drop. A stat you are trying to raise. What is making the respec difficult?" oninput="checkSubmit()"></textarea>
+    </div>
+  </div>
+
+  <!-- SECTION 6: THE CORE QUESTION -->
+  <div class="sheet-section">
+    <div class="section-header">
+      <span class="section-tag both">Both</span>
+      <span class="section-title">The Core Question</span>
+      <span class="section-desc">The hardest entry on any character sheet</span>
+    </div>
+    <div class="rpg-field">
+      <div class="field-label">Which parts of this build feel like you — and which parts feel like a role you levelled into?</div>
+      <textarea class="rpg-input" id="coreQuestion" rows="3"
+        placeholder="Be specific. Not 'I am kind' — what specifically feels genuinely yours versus what you play because it is expected or safe?" oninput="checkSubmit()"></textarea>
+      <div class="field-hint" id="coreHint"></div>
+    </div>
+  </div>
+
+  <div class="sheet-nav">
+    <div class="nav-note">Complete the sheet to generate your portrait.</div>
+    <button class="sheet-btn primary" id="submitBtn" onclick="submitSheet()" disabled>Generate portrait →</button>
+  </div>
+</div>
+
+<!-- READING -->
+<div id="reading" class="screen">
+  <div class="reading-label">Reading the build</div>
+  <div class="reading-dots"><span></span><span></span><span></span></div>
+</div>
+
+<!-- RESULT -->
+<div id="result" class="screen">
+  <div class="result-header">
+    <div class="result-title">RPG4LIFE // Build Report</div>
+    <div class="result-stamp" id="resultStamp"></div>
+  </div>
+
+  <div class="sheet-summary" id="sheetSummary"></div>
+
+  <div class="result-rule" id="resultRule"></div>
+  <div class="portrait-label" id="portraitLabel">Build Analysis</div>
+  <div class="portrait-headline" id="portraitHeadline"></div>
+  <div class="portrait-body" id="portraitBody"></div>
+  <div class="portrait-sig" id="portraitSig"></div>
+
+  <div class="disc-wrap" id="discWrap">
+    <div class="disc-header">
+      <div class="disc-label">For discussion</div>
+      <div class="disc-note">Derived from this build · for teacher use</div>
+    </div>
+    <div id="discList"></div>
+  </div>
+
+  <div class="result-footer" id="resultFooter">
+    <div class="footer-note">Some roles were assigned. Some were chosen. Most became part of you through repetition.</div>
+    <div class="footer-btns">
+      <button class="result-btn" onclick="window.print()">Save / Print</button>
+      <button class="result-btn" onclick="restart()">Respec →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const PROXY = "https://anthropic-proxy.justin-steinmetz.workers.dev";
+
+// ── PIXEL ART ICONS (16×16 SVG, currentColor, 1-bit) ──
+const ICONS = {
+  // ASSIGNED — crown, star, orb, bridge, shield, broken-circle, trophy, lightning
+  eldest: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+    <rect x="2" y="10" width="12" height="2" fill="currentColor"/>
+    <rect x="2" y="12" width="12" height="2" fill="currentColor"/>
+    <rect x="2" y="8" width="2" height="2" fill="currentColor"/>
+    <rect x="7" y="8" width="2" height="2" fill="currentColor"/>
+    <rect x="12" y="8" width="2" height="2" fill="currentColor"/>
+    <rect x="2" y="4" width="2" height="4" fill="currentColor"/>
+    <rect x="12" y="4" width="2" height="4" fill="currentColor"/>
+    <rect x="7" y="2" width="2" height="6" fill="currentColor"/>
+    <rect x="5" y="4" width="2" height="2" fill="currentColor"/>
+    <rect x="9" y="4" width="2" height="2" fill="currentColor"/>
+  </svg>`,
+
+  youngest: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+    <rect x="7" y="1" width="2" height="2" fill="currentColor"/>
+    <rect x="4" y="3" width="2" height="2" fill="currentColor"/>
+    <rect x="10" y="3" width="2" height="2" fill="currentColor"/>
+    <rect x="3" y="6" width="2" height="2" fill="currentColor"/>
+    <rect x="11" y="6" width="2" height="2" fill="currentColor"/>
+    <rect x="4" y="9" width="2" height="2" fill="currentColor"/>
+    <rect x="10" y="9" width="2" height="2" fill="currentColor"/>
+    <rect x="6" y="5" width="4" height="4" fill="currentColor"/>
+    <rect x="7" y="11" width="2" height="2" fill="currentColor"/>
+    <rect x="6" y="13" width="4" height="2" fill="currentColor"/>
+  </svg>`,
+
+  only: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+    <rect x="6" y="2" width="4" height="2" fill="currentColor"/>
+    <rect x="4" y="4" width="2" height="2" fill="currentColor"/>
+    <rect x="10" y="4" width="2" height="2" fill="currentColor"/>
+    <rect x="3" y="6" width="2" height="4" fill="currentColor"/>
+    <rect x="11" y="6" width="2" height="4" fill="currentColor"/>
+    <rect x="4" y="10" width="2" height="2" fill="currentColor"/>
+    <rect x="10" y="10" width="2" height="2" fill="currentColor"/>
+    <rect x="6" y="12" width="4" height="2" fill="currentColor"/>
+    <rect x="6" y="6" width="4" height="4" fill="currentColor"/>
+  </svg>`,
+
+  middle: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+    <rect x="1" y="7" width="14" height="2" fill="currentColor"/>
+    <rect x="1" y="5" width="4" height="2" fill="currentColor"/>
+    <rect x="1" y="9" width="4" height="2" fill="currentColor"/>
+    <rect x="11" y="5" width="4" height="2" fill="currentColor"/>
+    <rect x="11" y="9" width="4" height="2" fill="currentColor"/>
+    <rect x="1" y="3" width="4" height="2" fill="currentColor"/>
+    <rect x="1" y="11" width="4" height="2" fill="currentColor"/>
+    <rect x="11" y="3" width="4" height="2" fill="currentColor"/>
+    <rect x="11" y="11" width="4" height="2" fill="currentColor"/>
+  </svg>`,
+
+  caretaker: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+    <rect x="3" y="8" width="2" height="6" fill="currentColor"/>
+    <rect x="11" y="8" width="2" height="6" fill="currentColor"/>
+    <rect x="5" y="12" width="6" height="2" fill="currentColor"/>
+    <rect x="2" y="6" width="2" height="2" fill="currentColor"/>
+    <rect x="12" y="6" width="2" height="2" fill="currentColor"/>
+    <rect x="4" y="4" width="2" height="2" fill="currentColor"/>
+    <rect x="10" y="4" width="2" height="2" fill="currentColor"/>
+    <rect x="6" y="2" width="4" height="4" fill="currentColor"/>
+    <rect x="5" y="6" width="6" height="2" fill="currentColor"/>
+  </svg>`,
+
+  outsider: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+    <rect x="6" y="2" width="4" height="2" fill="currentColor"/>
+    <rect x="4" y="4" width="2" height="2" fill="currentColor"/>
+    <rect x="10" y="4" width="2" height="2" fill="currentColor"/>
+    <rect x="3" y="6" width="2" height="4" fill="currentColor"/>
+    <rect x="4" y="10" width="2" height="2" fill="currentColor"/>
+    <rect x="6" y="12" width="4" height="2" fill="currentColor"/>
+    <rect x="10" y="10" width="2" height="2" fill="currentColor"/>
+    <rect x="9" y="5" width="5" height="2" fill="currentColor"/>
+    <rect x="12" y="7" width="2" height="2" fill="currentColor"/>
+    <rect x="9" y="9" width="5" height="2" fill="currentColor"/>
+  </svg>`,
+
+  achiever: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+    <rect x="4" y="2" width="8" height="2" fill="currentColor"/>
+    <rect x="3" y="4" width="2" height="4" fill="currentColor"/>
+    <rect x="11" y="4" width="2" height="4" fill="currentColor"/>
+    <rect x="4" y="8" width="8" height="2" fill="currentColor"/>
+    <rect x="5" y="10" width="6" height="2" fill="currentColor"/>
+    <rect x="6" y="12" width="4" height="2" fill="currentColor"/>
+    <rect x="5" y="14" width="6" height="2" fill="currentColor"/>
+    <rect x="6" y="5" width="4" height="2" fill="currentColor"/>
+  </svg>`,
+
+  rebel: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+    <rect x="7" y="1" width="4" height="2" fill="currentColor"/>
+    <rect x="6" y="3" width="2" height="2" fill="currentColor"/>
+    <rect x="5" y="5" width="4" height="2" fill="currentColor"/>
+    <rect x="4" y="7" width="6" height="2" fill="currentColor"/>
+    <rect x="6" y="9" width="4" height="2" fill="currentColor"/>
+    <rect x="7" y="11" width="2" height="4" fill="currentColor"/>
+    <rect x="9" y="5" width="2" height="2" fill="currentColor"/>
+    <rect x="10" y="7" width="2" height="2" fill="currentColor"/>
+  </svg>`,
+
+  // CHOSEN — banner, heart/plus, mask, book, tower, question, pencil, handshake, moon, nodes, star, cube
+  leader: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+    <rect x="3" y="2" width="2" height="12" fill="currentColor"/>
+    <rect x="5" y="2" width="8" height="2" fill="currentColor"/>
+    <rect x="5" y="4" width="8" height="2" fill="currentColor"/>
+    <rect x="5" y="6" width="6" height="2" fill="currentColor"/>
+    <rect x="13" y="4" width="2" height="4" fill="currentColor"/>
+    <rect x="5" y="8" width="8" height="2" fill="currentColor"/>
+  </svg>`,
+
+  helper: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+    <rect x="6" y="2" width="4" height="2" fill="currentColor"/>
+    <rect x="4" y="4" width="8" height="2" fill="currentColor"/>
+    <rect x="3" y="6" width="10" height="2" fill="currentColor"/>
+    <rect x="4" y="8" width="8" height="2" fill="currentColor"/>
+    <rect x="5" y="10" width="6" height="2" fill="currentColor"/>
+    <rect x="6" y="12" width="4" height="2" fill="currentColor"/>
+    <rect x="7" y="14" width="2" height="1" fill="currentColor"/>
+  </svg>`,
+
+  performer: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+    <rect x="4" y="2" width="8" height="2" fill="currentColor"/>
+    <rect x="2" y="4" width="2" height="6" fill="currentColor"/>
+    <rect x="12" y="4" width="2" height="6" fill="currentColor"/>
+    <rect x="4" y="10" width="2" height="2" fill="currentColor"/>
+    <rect x="10" y="10" width="2" height="2" fill="currentColor"/>
+    <rect x="6" y="12" width="4" height="2" fill="currentColor"/>
+    <rect x="5" y="6" width="2" height="2" fill="currentColor"/>
+    <rect x="9" y="6" width="2" height="2" fill="currentColor"/>
+    <rect x="5" y="8" width="6" height="1" fill="currentColor"/>
+  </svg>`,
+
+  scholar: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+    <rect x="3" y="2" width="10" height="2" fill="currentColor"/>
+    <rect x="3" y="4" width="2" height="8" fill="currentColor"/>
+    <rect x="11" y="4" width="2" height="8" fill="currentColor"/>
+    <rect x="3" y="12" width="10" height="2" fill="currentColor"/>
+    <rect x="5" y="5" width="6" height="1" fill="currentColor"/>
+    <rect x="5" y="7" width="6" height="1" fill="currentColor"/>
+    <rect x="5" y="9" width="4" height="1" fill="currentColor"/>
+    <rect x="7" y="2" width="2" height="2" fill="currentColor"/>
+  </svg>`,
+
+  protector: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+    <rect x="4" y="2" width="8" height="2" fill="currentColor"/>
+    <rect x="2" y="4" width="2" height="8" fill="currentColor"/>
+    <rect x="12" y="4" width="2" height="8" fill="currentColor"/>
+    <rect x="4" y="12" width="2" height="2" fill="currentColor"/>
+    <rect x="10" y="12" width="2" height="2" fill="currentColor"/>
+    <rect x="6" y="13" width="4" height="2" fill="currentColor"/>
+    <rect x="4" y="4" width="8" height="2" fill="currentColor"/>
+    <rect x="7" y="6" width="2" height="6" fill="currentColor"/>
+    <rect x="5" y="8" width="6" height="2" fill="currentColor"/>
+  </svg>`,
+
+  skeptic: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+    <rect x="5" y="2" width="6" height="2" fill="currentColor"/>
+    <rect x="3" y="4" width="2" height="2" fill="currentColor"/>
+    <rect x="11" y="4" width="2" height="2" fill="currentColor"/>
+    <rect x="9" y="6" width="2" height="2" fill="currentColor"/>
+    <rect x="7" y="8" width="2" height="2" fill="currentColor"/>
+    <rect x="7" y="12" width="2" height="2" fill="currentColor"/>
+  </svg>`,
+
+  creator: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+    <rect x="10" y="2" width="4" height="2" fill="currentColor"/>
+    <rect x="9" y="4" width="2" height="2" fill="currentColor"/>
+    <rect x="7" y="6" width="2" height="2" fill="currentColor"/>
+    <rect x="5" y="8" width="2" height="2" fill="currentColor"/>
+    <rect x="3" y="10" width="2" height="2" fill="currentColor"/>
+    <rect x="2" y="12" width="4" height="2" fill="currentColor"/>
+    <rect x="11" y="4" width="2" height="2" fill="currentColor"/>
+    <rect x="10" y="6" width="2" height="2" fill="currentColor"/>
+  </svg>`,
+
+  diplomat: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+    <rect x="1" y="6" width="4" height="2" fill="currentColor"/>
+    <rect x="1" y="8" width="4" height="2" fill="currentColor"/>
+    <rect x="11" y="6" width="4" height="2" fill="currentColor"/>
+    <rect x="11" y="8" width="4" height="2" fill="currentColor"/>
+    <rect x="5" y="5" width="2" height="2" fill="currentColor"/>
+    <rect x="9" y="5" width="2" height="2" fill="currentColor"/>
+    <rect x="5" y="9" width="2" height="2" fill="currentColor"/>
+    <rect x="9" y="9" width="2" height="2" fill="currentColor"/>
+    <rect x="7" y="4" width="2" height="8" fill="currentColor"/>
+  </svg>`,
+
+  loner: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+    <rect x="8" y="2" width="2" height="2" fill="currentColor"/>
+    <rect x="10" y="4" width="2" height="2" fill="currentColor"/>
+    <rect x="11" y="6" width="2" height="4" fill="currentColor"/>
+    <rect x="10" y="10" width="2" height="2" fill="currentColor"/>
+    <rect x="8" y="12" width="4" height="2" fill="currentColor"/>
+    <rect x="5" y="11" width="2" height="2" fill="currentColor"/>
+    <rect x="3" y="8" width="2" height="4" fill="currentColor"/>
+    <rect x="4" y="6" width="2" height="2" fill="currentColor"/>
+    <rect x="6" y="4" width="4" height="2" fill="currentColor"/>
+    <rect x="6" y="7" width="4" height="2" fill="currentColor"/>
+  </svg>`,
+
+  connector: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+    <rect x="1" y="2" width="4" height="4" fill="currentColor"/>
+    <rect x="11" y="2" width="4" height="4" fill="currentColor"/>
+    <rect x="6" y="8" width="4" height="4" fill="currentColor"/>
+    <rect x="5" y="4" width="6" height="2" fill="currentColor"/>
+    <rect x="4" y="6" width="2" height="4" fill="currentColor"/>
+    <rect x="10" y="6" width="2" height="4" fill="currentColor"/>
+  </svg>`,
+
+  idealist: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+    <rect x="7" y="1" width="2" height="3" fill="currentColor"/>
+    <rect x="11" y="3" width="2" height="2" fill="currentColor"/>
+    <rect x="12" y="5" width="2" height="2" fill="currentColor"/>
+    <rect x="3" y="3" width="2" height="2" fill="currentColor"/>
+    <rect x="2" y="5" width="2" height="2" fill="currentColor"/>
+    <rect x="5" y="5" width="6" height="4" fill="currentColor"/>
+    <rect x="4" y="7" width="8" height="2" fill="currentColor"/>
+    <rect x="5" y="9" width="6" height="2" fill="currentColor"/>
+    <rect x="6" y="11" width="4" height="2" fill="currentColor"/>
+    <rect x="7" y="13" width="2" height="2" fill="currentColor"/>
+  </svg>`,
+
+  realist: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+    <rect x="3" y="3" width="10" height="2" fill="currentColor"/>
+    <rect x="3" y="5" width="2" height="8" fill="currentColor"/>
+    <rect x="11" y="5" width="2" height="8" fill="currentColor"/>
+    <rect x="3" y="13" width="10" height="2" fill="currentColor"/>
+    <rect x="5" y="5" width="6" height="2" fill="currentColor"/>
+    <rect x="5" y="11" width="6" height="2" fill="currentColor"/>
+    <rect x="5" y="7" width="2" height="4" fill="currentColor"/>
+    <rect x="9" y="7" width="2" height="4" fill="currentColor"/>
+  </svg>`,
+};
+
+// ── CLASS DEFINITIONS ──
+const PRIMARY_CLASSES = [
+  { id: 'eldest',    name: 'Eldest Child',     desc: 'Responsibility assigned before consent. Leadership by default.' },
+  { id: 'youngest',  name: 'Youngest Child',   desc: 'Indulged or overlooked. The role of becoming.' },
+  { id: 'only',      name: 'Only Child',       desc: 'Undivided attention. Undivided expectation.' },
+  { id: 'middle',    name: 'Middle Child',     desc: 'The negotiator. Identity built in the gap.' },
+  { id: 'caretaker', name: 'Caretaker',        desc: 'Assigned emotional or practical responsibility for others.' },
+  { id: 'outsider',  name: 'Outsider',         desc: 'Placed outside the group before choosing to leave it.' },
+  { id: 'achiever',  name: 'The Achiever',     desc: 'Success as the primary assigned identity.' },
+  { id: 'rebel',     name: 'The Rebel',        desc: 'Resistance as role. Opposition as definition.' },
+];
+
+const SECONDARY_CLASSES = [
+  { id: 'leader',    name: 'Leader',           desc: 'Others follow. The role carries weight.' },
+  { id: 'helper',    name: 'Helper',           desc: 'Present for others. Sometimes absent for self.' },
+  { id: 'performer', name: 'Performer',        desc: 'Identity delivered to an audience.' },
+  { id: 'scholar',   name: 'Scholar',          desc: 'Knowledge as identity. Status through competence.' },
+  { id: 'protector', name: 'Protector',        desc: 'Strength performed or felt. Others depend on it.' },
+  { id: 'skeptic',   name: 'Skeptic',          desc: 'Questioning as reflex. Doubt as protection.' },
+  { id: 'creator',   name: 'Creator',          desc: 'Making as self-expression or escape.' },
+  { id: 'diplomat',  name: 'Diplomat',         desc: 'Conflict avoided. Peace maintained at cost.' },
+  { id: 'loner',     name: 'Loner',            desc: 'Chosen or assigned. Solitude as build.' },
+  { id: 'connector', name: 'Connector',        desc: 'Social glue. Others meet through you.' },
+  { id: 'idealist',  name: 'Idealist',         desc: 'Principles held. Reality resisted.' },
+  { id: 'realist',   name: 'Realist',          desc: 'Expectations managed. Disappointment pre-empted.' },
+];
+
+const ASSIGNED_STATS = [
+  { id: 'trust',      name: 'Trust',       desc: 'How safe the world felt early' },
+  { id: 'autonomy',   name: 'Autonomy',    desc: 'How much choice you were given' },
+  { id: 'belonging',  name: 'Belonging',   desc: 'How included you felt in your early group' },
+  { id: 'visibility', name: 'Visibility',  desc: 'How seen or heard you were' },
+];
+
+const CHOSEN_STATS = [
+  { id: 'resilience', name: 'Resilience',  desc: 'Capacity built through difficulty' },
+  { id: 'empathy',    name: 'Empathy',     desc: 'Developed attention to others' },
+  { id: 'ambition',   name: 'Ambition',    desc: 'Drive cultivated or suppressed' },
+  { id: 'boundary',   name: 'Boundaries',  desc: 'Learned ability to protect self' },
+];
+
+// State
+let primaryClass = null;
+let secondaryClasses = [];
+let assignedStats = {};
+let chosenStats = {};
+const sessionId = 'RPG-' + Math.random().toString(36).slice(2,4).toUpperCase() + '-' +
+                            Math.random().toString(36).slice(2,4).toUpperCase();
+
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function beginSheet() {
+  document.getElementById('charId').textContent = sessionId;
+  show('sheet');
+  buildSheet();
+}
+
+function buildSheet() {
+  // Primary classes
+  const pg = document.getElementById('primaryClassGrid');
+  PRIMARY_CLASSES.forEach(c => {
+    const card = document.createElement('div');
+    card.className = 'class-card assigned-class';
+    card.dataset.id = c.id;
+    card.innerHTML = `
+      <div class="class-card-badge">Assigned</div>
+      <div class="class-card-icon">${ICONS[c.id] || ''}</div>
+      <div class="class-card-name">${c.name}</div>
+      <div class="class-card-desc">${c.desc}</div>
+    `;
+    card.addEventListener('click', () => selectPrimary(c.id, card));
+    pg.appendChild(card);
+  });
+
+  // Secondary classes
+  const sg = document.getElementById('secondaryClassGrid');
+  SECONDARY_CLASSES.forEach(c => {
+    const card = document.createElement('div');
+    card.className = 'class-card chosen-class';
+    card.dataset.id = c.id;
+    card.innerHTML = `
+      <div class="class-card-icon">${ICONS[c.id] || ''}</div>
+      <div class="class-card-name">${c.name}</div>
+      <div class="class-card-desc">${c.desc}</div>
+    `;
+    card.addEventListener('click', () => toggleSecondary(c.id, card));
+    sg.appendChild(card);
+  });
+
+  // Assigned stats
+  const ag = document.getElementById('assignedStatsGrid');
+  ASSIGNED_STATS.forEach(s => {
+    assignedStats[s.id] = 5;
+    ag.appendChild(buildStatRow(s, true));
+  });
+
+  // Chosen stats
+  const cg = document.getElementById('chosenStatsGrid');
+  CHOSEN_STATS.forEach(s => {
+    chosenStats[s.id] = 5;
+    cg.appendChild(buildStatRow(s, false));
+  });
+}
+
+function buildStatRow(stat, isAssigned) {
+  const row = document.createElement('div');
+  row.className = 'stat-row';
+
+  const name = document.createElement('div');
+  name.className = 'stat-name';
+  name.textContent = stat.name;
+
+  const barWrap = document.createElement('div');
+  barWrap.className = 'stat-bar-wrap';
+
+  const fill = document.createElement('div');
+  fill.className = 'stat-bar-fill' + (isAssigned ? ' assigned-fill' : '');
+  fill.style.width = '50%';
+  fill.id = `bar-${stat.id}`;
+
+  const slider = document.createElement('input');
+  slider.type = 'range'; slider.min = 1; slider.max = 10; slider.value = 5;
+  slider.className = 'stat-slider';
+  slider.addEventListener('input', e => {
+    const val = parseInt(e.target.value);
+    fill.style.width = (val * 10) + '%';
+    valEl.textContent = val;
+    if (isAssigned) assignedStats[stat.id] = val;
+    else chosenStats[stat.id] = val;
+  });
+
+  barWrap.appendChild(fill);
+  barWrap.appendChild(slider);
+
+  const valEl = document.createElement('div');
+  valEl.className = 'stat-val' + (isAssigned ? ' assigned-val' : '');
+  valEl.textContent = '5';
+
+  row.appendChild(name); row.appendChild(barWrap); row.appendChild(valEl);
+  return row;
+}
+
+function selectPrimary(id, card) {
+  document.querySelectorAll('#primaryClassGrid .class-card').forEach(c => {
+    c.classList.remove('selected');
+    c.querySelector('.class-card-badge') && (c.querySelector('.class-card-badge').textContent = 'Assigned');
+  });
+  primaryClass = id;
+  card.classList.add('selected');
+  const badge = card.querySelector('.class-card-badge');
+  if (badge) badge.textContent = '✓ Selected';
+  checkSubmit();
+}
+
+function toggleSecondary(id, card) {
+  if (secondaryClasses.includes(id)) {
+    secondaryClasses = secondaryClasses.filter(c => c !== id);
+    card.classList.remove('selected');
+  } else {
+    if (secondaryClasses.length >= 3) return;
+    secondaryClasses.push(id);
+    card.classList.add('selected');
+  }
+  checkSubmit();
+}
+
+function checkSubmit() {
+  const hasCore = document.getElementById('coreQuestion').value.trim().length >= 30;
+  const hasBuff = document.getElementById('buffField').value.trim().length >= 10;
+  const hasDebuff = document.getElementById('debuffField').value.trim().length >= 10;
+  const hasInvAssigned = document.getElementById('inventoryAssigned').value.trim().length >= 10;
+  const hasInvChosen = document.getElementById('inventoryChosen').value.trim().length >= 10;
+  const hasQuest = document.getElementById('questField').value.trim().length >= 10;
+  const hasPrimary = !!primaryClass;
+
+  const hint = document.getElementById('coreHint');
+  const coreVal = document.getElementById('coreQuestion').value.trim().length;
+  hint.textContent = coreVal < 30 ? 'keep going' : '';
+
+  document.getElementById('submitBtn').disabled = !(
+    hasPrimary && hasCore && hasBuff && hasDebuff &&
+    hasInvAssigned && hasInvChosen && hasQuest
+  );
+}
+
+// ── SUBMIT ──
+async function submitSheet() {
+  document.getElementById('progFill').style.width = '100%';
+  show('reading');
+
+  const primaryName = PRIMARY_CLASSES.find(c => c.id === primaryClass)?.name || '—';
+  const secondaryNames = secondaryClasses.map(id => SECONDARY_CLASSES.find(c => c.id === id)?.name).join(', ') || 'None';
+
+  const assignedStatStr = ASSIGNED_STATS.map(s => `${s.name}: ${assignedStats[s.id]}/10`).join(', ');
+  const chosenStatStr   = CHOSEN_STATS.map(s =>   `${s.name}: ${chosenStats[s.id]}/10`).join(', ');
+
+  const inv_assigned = document.getElementById('inventoryAssigned').value.trim();
+  const inv_chosen   = document.getElementById('inventoryChosen').value.trim();
+  const buff         = document.getElementById('buffField').value.trim();
+  const debuff       = document.getElementById('debuffField').value.trim();
+  const quest        = document.getElementById('questField').value.trim();
+  const respec       = document.getElementById('respecField').value.trim();
+  const core         = document.getElementById('coreQuestion').value.trim();
+
+  const sheetRecord = `PRIMARY CLASS (Assigned): ${primaryName}
+SECONDARY CLASSES (Chosen): ${secondaryNames}
+
+BASE STATS (Assigned — set by early experience):
+${assignedStatStr}
+
+DEVELOPED STATS (Chosen — built over time):
+${chosenStatStr}
+
+INVENTORY (Assigned — given and still carried): ${inv_assigned}
+INVENTORY (Chosen — acquired independently): ${inv_chosen}
+
+BUFF (advantage of this build): ${buff}
+DEBUFF (hidden cost of this build): ${debuff}
+
+ACTIVE QUEST: ${quest}
+ATTEMPTED RESPEC: ${respec || '[none stated]'}
+
+CORE QUESTION — which parts feel like you, which feel like a levelled role:
+${core}`;
+
+  const prompt = `You have just received a completed RPG4LIFE character sheet from a student aged 16–18. RPG4LIFE is an identity instrument that reframes identity as a character build: classes, stats, inventory, buffs, debuffs, quests, and respec attempts.
+
+The instrument distinguishes between ASSIGNED elements (inherited, given, not chosen) and CHOSEN elements (built, selected, developed). This distinction is the conceptual core.
+
+Here is the completed sheet:
+
+${sheetRecord}
+
+Your task is to read this build as a structural analysis of how this student's identity was assembled — not to describe their personality, but to identify which roles have become second nature, which carry hidden costs, and where the assigned and chosen elements conflict or reinforce each other.
+
+The central question of RPG4LIFE: "What feels like personality, and what is a role you have levelled through repetition?"
+
+Rules:
+1. Read the PRIMARY CLASS carefully — this is the role assigned before consent. How does it interact with the Secondary Classes the student chose? Do the choices reinforce the assignment, resist it, or compensate for it?
+2. Read the STATS as a pattern, not as individual scores. Low Trust + High Resilience tells a different story than High Trust + Low Boundary.
+3. The BUFF/DEBUFF pair is the most revealing entry. What does it say about the cost of this build? Who pays it, and who benefits?
+4. The RESPEC entry — if present — is where the student names what they are trying to change. Name what is making the respec difficult, even if they haven't.
+5. The CORE QUESTION is primary data. Quote or reference their specific language.
+6. Do not use therapeutic language: not 'authentic', not 'journey', not 'growth', not 'healing'.
+7. Do not reassure or praise. Analyse.
+8. Write in second person. Do not begin with 'You'. Enter through something specific in the sheet.
+9. The final sentence should name where the student currently is in their build — not where they should go.
+
+Output format — exactly:
+
+HEADLINE:
+[4–8 words. Names the central structural feature of this build. Not a personality type — a pattern.]
+
+READING:
+[200–270 words. Structural analysis. Names which classes dominate, which stats tell a pattern, what the buff/debuff reveals about the cost of this build, where assigned and chosen elements conflict. References the core question directly. Does not resolve.]
+
+SIGNATURE:
+[One sentence. The most specific thing this build reveals about what has become second nature versus what remains a performance. Grounded in their actual sheet.]
+
+DISCUSSION:
+Q1: [Derived from the relationship between the assigned primary class and the chosen secondary classes]
+Q2: [Derived from the buff/debuff pair and what it reveals about cost]
+Q3: [Derived from the respec attempt — what it suggests about what the student is trying to become]`;
+
+  try {
+    const resp = await fetch(PROXY, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1100,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await resp.json();
+    const text = data.content.map(b => b.text || '').join('');
+
+    const headlineMatch  = text.match(/HEADLINE:\s*([\s\S]+?)(?=READING:|$)/i);
+    const readingMatch   = text.match(/READING:\s*([\s\S]+?)(?=SIGNATURE:|$)/i);
+    const signatureMatch = text.match(/SIGNATURE:\s*([\s\S]+?)(?=DISCUSSION:|$)/i);
+    const discMatch      = text.match(/DISCUSSION:\s*([\s\S]+)/i);
+
+    showResult(
+      headlineMatch  ? headlineMatch[1].trim()  : '—',
+      readingMatch   ? readingMatch[1].trim()   : text,
+      signatureMatch ? signatureMatch[1].trim() : '',
+      discMatch      ? discMatch[1].trim()      : '',
+      { primaryName, secondaryNames, assignedStatStr, chosenStatStr,
+        inv_assigned, inv_chosen, buff, debuff, quest, respec, core }
+    );
+  } catch(err) {
+    showResult('—', 'The build analysis could not be completed. Your character sheet remains.', '', '', {});
+  }
+}
+
+function showResult(headline, reading, signature, discussion, data) {
+  show('result');
+
+  const now = new Date();
+  document.getElementById('resultStamp').textContent =
+    sessionId + '\n' +
+    now.toLocaleDateString('en-GB') + ' ' +
+    now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+  // Build sheet summary
+  const summary = document.getElementById('sheetSummary');
+  summary.innerHTML = '';
+  const sections = [
+    { label: 'Primary Class (Assigned)', value: data.primaryName || '—' },
+    { label: 'Secondary Classes (Chosen)', value: data.secondaryNames || '—' },
+    { label: 'Base Stats (Assigned)', value: data.assignedStatStr || '—' },
+    { label: 'Developed Stats (Chosen)', value: data.chosenStatStr || '—' },
+    { label: 'Inventory — Given', value: data.inv_assigned || '—' },
+    { label: 'Inventory — Acquired', value: data.inv_chosen || '—' },
+    { label: 'Buff', value: data.buff || '—' },
+    { label: 'Debuff', value: data.debuff || '—' },
+    { label: 'Active Quest', value: data.quest || '—' },
+    { label: 'Respec Attempt', value: data.respec || '[none stated]' },
+    { label: 'Core Question', value: data.core || '—' },
+  ];
+
+  sections.forEach(s => {
+    const sec = document.createElement('div');
+    sec.className = 'summary-section';
+    sec.innerHTML = `
+      <div class="summary-header"><div class="summary-header-label">${s.label}</div></div>
+      <div class="summary-body">${s.value}</div>
+    `;
+    summary.appendChild(sec);
+  });
+
+  setTimeout(() => summary.classList.add('visible'), 200);
+
+  setTimeout(() => {
+    document.getElementById('resultRule').classList.add('visible');
+    setTimeout(() => {
+      document.getElementById('portraitLabel').classList.add('visible');
+      document.getElementById('portraitHeadline').textContent = headline;
+      document.getElementById('portraitBody').textContent = reading;
+      document.getElementById('portraitSig').textContent = signature;
+      setTimeout(() => document.getElementById('portraitHeadline').classList.add('visible'), 200);
+      setTimeout(() => document.getElementById('portraitBody').classList.add('visible'), 700);
+      setTimeout(() => document.getElementById('portraitSig').classList.add('visible'), 1500);
+    }, 400);
+  }, 1400);
+
+  if (discussion) {
+    const list = document.getElementById('discList');
+    list.innerHTML = '';
+    discussion.split('\n').filter(l => l.trim()).forEach((line, i) => {
+      const cleaned = line.replace(/^Q\d+:\s*/i, '').trim();
+      if (!cleaned) return;
+      const item = document.createElement('div');
+      item.className = 'disc-item';
+      const num = document.createElement('div');
+      num.className = 'disc-num'; num.textContent = String(i+1).padStart(2,'0');
+      const q = document.createElement('div');
+      q.className = 'disc-q'; q.textContent = cleaned;
+      item.appendChild(num); item.appendChild(q);
+      list.appendChild(item);
+    });
+    setTimeout(() => document.getElementById('discWrap').classList.add('visible'), 3800);
+  }
+
+  setTimeout(() => document.getElementById('resultFooter').classList.add('visible'), 4600);
+}
+
+function restart() {
+  primaryClass = null; secondaryClasses = []; assignedStats = {}; chosenStats = {};
+  ['inventoryAssigned','inventoryChosen','buffField','debuffField',
+   'questField','respecField','coreQuestion'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('primaryClassGrid').innerHTML = '';
+  document.getElementById('secondaryClassGrid').innerHTML = '';
+  document.getElementById('assignedStatsGrid').innerHTML = '';
+  document.getElementById('chosenStatsGrid').innerHTML = '';
+  document.getElementById('sheetSummary').innerHTML = '';
+  document.getElementById('discList').innerHTML = '';
+  document.getElementById('progFill').style.width = '0%';
+  ['sheetSummary','resultRule','portraitLabel','portraitHeadline',
+   'portraitBody','portraitSig','discWrap','resultFooter']
+    .forEach(id => document.getElementById(id).classList.remove('visible'));
+  show('intro');
+}
+</script>
+</body>
+</html>
