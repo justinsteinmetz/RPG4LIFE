@@ -603,6 +603,20 @@ input[type=range].stat-slider:focus-visible {
   color: var(--dungeon-text);
   opacity: 0.85;
 }
+.dng-core-mirror {
+  display: none;
+  margin-top: 0.85rem;
+  padding: 0.65rem 0.85rem;
+  border-left: 2px solid var(--amber);
+  font-size: 11px;
+  line-height: 1.65;
+  color: var(--amber);
+  opacity: 0.82;
+  font-style: italic;
+  letter-spacing: 0.02em;
+}
+.dng-core-mirror.visible { display: block; }
+
 .dng-result-delta {
   font-size: 10px;
   letter-spacing: 0.08em;
@@ -1114,6 +1128,7 @@ input[type=range].stat-slider:focus-visible {
       <div class="dng-result-header" id="dngResultHeader"></div>
       <div class="dng-result-text" id="dngResultText"></div>
       <div class="dng-result-delta" id="dngResultDelta"></div>
+      <div class="dng-core-mirror" id="dngCoreMirror"></div>
     </div>
 
     <button class="dng-continue-btn" id="dngContinueBtn" onclick="nextEncounter()">Continue →</button>
@@ -1168,6 +1183,7 @@ input[type=range].stat-slider:focus-visible {
       <div class="dng-result-header" id="bossResultHeader"></div>
       <div class="dng-result-text" id="bossResultText"></div>
       <div class="dng-result-delta" id="bossResultDelta"></div>
+      <div class="dng-core-mirror" id="bossCoreMirror"></div>
     </div>
 
     <button class="dng-continue-btn" id="bossContinueBtn" onclick="resolveBoss()">Continue →</button>
@@ -1179,6 +1195,7 @@ input[type=range].stat-slider:focus-visible {
   <div class="final-inner">
     <div class="final-header">RPG4LIFE // Run Complete</div>
     <div class="final-title" id="finalTitle"></div>
+    <div class="dng-core-mirror" id="finalCoreMirror" style="margin-bottom:1.5rem;font-size:12px"></div>
 
     <div class="final-run-record">
       <div class="run-record-title">// Run record</div>
@@ -1618,11 +1635,13 @@ function loadEncounter(idx) {
   }
   document.getElementById('encNarrative').innerHTML = narrative;
 
-  // Reset result/continue
+  // Reset result/continue/mirror
   const resultEl = document.getElementById('dngResult');
   resultEl.classList.remove('visible');
   const continueBtn = document.getElementById('dngContinueBtn');
   continueBtn.classList.remove('visible');
+  const mirrorEl = document.getElementById('dngCoreMirror');
+  mirrorEl.classList.remove('visible');
 
   // Build choices
   const choicesEl = document.getElementById('dngChoices');
@@ -1678,6 +1697,13 @@ function resolveChoice(action, enc) {
   if (hp <= 0) {
     setTimeout(doDeath, 1200);
     return;
+  }
+
+  // Mirror — show the student's own core question words back at them
+  const mirrorEl = document.getElementById('dngCoreMirror');
+  if (sheetData.core) {
+    mirrorEl.textContent = '\u201c' + sheetData.core + '\u201d';
+    mirrorEl.classList.add('visible');
   }
 
   const continueBtn = document.getElementById('dngContinueBtn');
@@ -1852,6 +1878,13 @@ function resolveBossChoice(action) {
 
   if (hp <= 0) { setTimeout(doDeath, 1200); return; }
 
+  // Mirror — core question back at them one last time before the final reading
+  const bossMirror = document.getElementById('bossCoreMirror');
+  if (sheetData.core) {
+    bossMirror.textContent = '\u201c' + sheetData.core + '\u201d';
+    bossMirror.classList.add('visible');
+  }
+
   document.getElementById('bossContinueBtn').classList.add('visible');
   document.getElementById('bossContinueBtn').onclick = generateFinalReading;
 }
@@ -1867,6 +1900,13 @@ async function generateFinalReading() {
   else if (chosenRatio > 0) title = 'ASSIGNED DOMINANT // CHOSEN PRESENT';
   else title = 'ASSIGNED ONLY // NO CHOSEN ACTIVATED';
   document.getElementById('finalTitle').textContent = title;
+
+  // Mirror at the top of the final reading — their words, before the AI's
+  const finalMirror = document.getElementById('finalCoreMirror');
+  if (sheetData.core) {
+    finalMirror.textContent = '\u201c' + sheetData.core + '\u201d';
+    finalMirror.classList.add('visible');
+  }
 
   // Run record rows
   const rows = [
@@ -1998,6 +2038,10 @@ function restart() {
   document.getElementById('finalDisc').innerHTML='';
   document.getElementById('finalContent').style.display='none';
   document.getElementById('finalAiLoading').style.display='block';
+  ['dngCoreMirror','bossCoreMirror','finalCoreMirror'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.classList.remove('visible'); el.textContent = ''; }
+  });
   ['bl1','bl2','bl3','bl4','bl5'].forEach(id=>document.getElementById(id).classList.remove('visible'));
   show('intro');
 }
