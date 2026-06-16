@@ -1,4 +1,4 @@
-https://justinsteinmetz.github.io/RPGFLIFE-/
+https://justinsteinmetz.github.io/RPG4LIFE/
 
 # RPG4LIFE
 
