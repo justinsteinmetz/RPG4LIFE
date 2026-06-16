@@ -19,30 +19,33 @@
   --faint:     #3a4025;
   --dim:       #222518;
 
-  /* The green — terminal/RPG */
   --green:     #7ab828;
   --green-dim: rgba(122,184,40,0.08);
   --green-b:   rgba(122,184,40,0.25);
   --green-hi:  #9fd040;
 
-  /* Assigned — amber (inherited, not chosen) */
   --amber:     #c8820a;
   --amber-dim: rgba(200,130,10,0.08);
   --amber-b:   rgba(200,130,10,0.25);
 
-  /* Chosen — cyan */
   --cyan:      #2a9ab8;
   --cyan-dim:  rgba(42,154,184,0.08);
   --cyan-b:    rgba(42,154,184,0.25);
 
-  /* Stat bars */
+  --red:       #c84040;
+  --red-dim:   rgba(200,64,64,0.12);
+
   --stat-bg:   #1a1d10;
 
-  /* Reading — warm paper break */
   --read-bg:   #f2ede4;
   --read-text: #1a1610;
   --read-muted:#7a6a50;
   --read-sepia:#8b6030;
+
+  --dungeon-bg: #050704;
+  --dungeon-text: #7ab828;
+  --dungeon-dim:  #3a5018;
+  --dungeon-hi:   #b8f040;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -57,545 +60,877 @@ body {
   overflow-x: hidden;
 }
 
-/* Scanlines */
+/* Scanlines — sheet phase */
 body::before {
   content: '';
-  position: fixed; inset: 0;
+  position: fixed;
+  inset: 0;
   background: repeating-linear-gradient(
-    0deg, transparent, transparent 3px,
-    rgba(0,0,0,0.07) 3px, rgba(0,0,0,0.07) 4px
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.03) 2px,
+    rgba(0,0,0,0.03) 4px
   );
-  pointer-events: none; z-index: 0;
+  pointer-events: none;
+  z-index: 999;
 }
 
-/* Vignette */
-body::after {
-  content: '';
-  position: fixed; inset: 0;
-  background: radial-gradient(ellipse at 50% 40%, transparent 30%, rgba(0,0,0,0.6) 100%);
-  pointer-events: none; z-index: 0;
-}
+/* ── PROGRESS BAR ── */
+.prog-wrap { position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 1000; background: var(--faint); }
+.prog-fill { height: 100%; background: var(--green); width: 0; transition: width 0.6s ease; }
 
-.screen { display: none; position: relative; z-index: 1; }
-.screen.active { display: flex; }
-
-/* Progress */
-.prog-wrap {
-  position: fixed; top: 0; left: 0; right: 0;
-  height: 2px; background: var(--faint); z-index: 200;
-}
-.prog-fill {
-  height: 100%; background: var(--green);
-  transition: width 0.7s ease; width: 0%;
-  box-shadow: 0 0 8px var(--green);
-}
+/* ── SCREENS ── */
+.screen { display: none; padding: 3rem clamp(1rem, 5vw, 3rem); max-width: 900px; margin: 0 auto; }
+.screen.active { display: block; }
 
 /* ── INTRO ── */
-#intro {
-  min-height: 100vh; flex-direction: column;
-  align-items: center; justify-content: center;
-  padding: clamp(2rem, 6vw, 5rem); text-align: center;
-}
-
 .intro-sys {
   font-family: 'Share Tech Mono', monospace;
-  font-size: 0.52rem; letter-spacing: 0.28em;
-  text-transform: uppercase; color: var(--muted);
-  margin-bottom: 2rem;
-}
-
-.intro-title {
-  font-family: 'Rajdhani', sans-serif;
-  font-weight: 700;
-  font-size: clamp(3.5rem, 12vw, 8rem);
-  line-height: 0.88; letter-spacing: 0.08em;
-  color: var(--green);
-  text-shadow: 0 0 40px rgba(122,184,40,0.3);
-  margin-bottom: 0.3rem;
-  animation: flicker 6s ease-in-out infinite;
-}
-
-@keyframes flicker {
-  0%,100% { opacity: 1; }
-  92% { opacity: 1; }
-  93% { opacity: 0.92; }
-  94% { opacity: 1; }
-  97% { opacity: 0.95; }
-  98% { opacity: 1; }
-}
-
-.intro-tagline {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 0.6rem; letter-spacing: 0.18em;
-  color: var(--muted); margin-bottom: 3rem;
-}
-
-.intro-premise {
-  font-size: 1rem; line-height: 1.9;
-  color: var(--muted); max-width: 440px;
-  margin: 0 auto 2.5rem; font-weight: 300;
-}
-.intro-premise strong { color: var(--text); font-weight: 600; }
-
-/* Legend */
-.intro-legend {
-  display: flex; gap: 1.5rem; justify-content: center;
-  margin-bottom: 3rem; flex-wrap: wrap;
-}
-.legend-item {
-  display: flex; align-items: center; gap: 0.5rem;
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 0.52rem; letter-spacing: 0.14em;
+  font-size: 10px;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-}
-.legend-dot {
-  width: 8px; height: 8px; border-radius: 1px; flex-shrink: 0;
-}
-.legend-dot.assigned { background: var(--amber); }
-.legend-dot.chosen { background: var(--cyan); }
-.legend-item.assigned { color: var(--amber); }
-.legend-item.chosen { color: var(--cyan); }
-
-.begin-btn {
-  background: transparent;
-  border: 1px solid var(--green);
-  color: var(--green);
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 0.65rem; letter-spacing: 0.22em;
-  text-transform: uppercase; padding: 0.85rem 2.5rem;
-  cursor: pointer; transition: all 0.2s;
-  box-shadow: 0 0 20px rgba(122,184,40,0.1);
-}
-.begin-btn:hover {
-  background: var(--green); color: var(--bg);
-  box-shadow: 0 0 40px rgba(122,184,40,0.3);
-}
-
-/* ── SHEET SCREEN ── */
-#sheet {
-  min-height: 100vh; flex-direction: column;
-  padding: clamp(2rem, 5vw, 4rem) clamp(1.5rem, 4vw, 3rem);
-  max-width: 860px; margin: 0 auto; width: 100%;
-}
-
-.sheet-hud {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 2rem; padding-bottom: 0.8rem;
-  border-bottom: 1px solid var(--border);
-}
-
-.hud-title {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 0.52rem; letter-spacing: 0.22em;
-  text-transform: uppercase; color: var(--muted);
-}
-
-.hud-id {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 0.48rem; letter-spacing: 0.14em; color: var(--faint);
-}
-
-/* Section headers */
-.sheet-section {
+  color: var(--muted);
   margin-bottom: 2.5rem;
 }
+.intro-title {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: clamp(3.5rem, 10vw, 7rem);
+  font-weight: 700;
+  color: var(--green);
+  letter-spacing: -0.02em;
+  line-height: 0.9;
+  margin-bottom: 0.5rem;
+}
+.intro-tagline {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 2.5rem;
+  letter-spacing: 0.05em;
+}
+.intro-premise {
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--text);
+  opacity: 0.85;
+  margin-bottom: 2rem;
+  max-width: 52ch;
+}
+.intro-premise strong { color: var(--green); font-weight: 600; }
+.intro-legend {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+  flex-wrap: wrap;
+}
+.legend-item {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.legend-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+}
+.legend-dot.assigned { background: var(--amber); }
+.legend-dot.chosen   { background: var(--cyan); }
+.legend-item.assigned { color: var(--amber); }
+.legend-item.chosen   { color: var(--cyan); }
 
-.section-header {
-  display: flex; align-items: center; gap: 0.8rem;
-  margin-bottom: 1rem; padding-bottom: 0.5rem;
+.begin-btn {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: var(--green-dim);
+  border: 1px solid var(--green-b);
+  color: var(--green);
+  padding: 0.85rem 2rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.begin-btn:hover { background: rgba(122,184,40,0.15); border-color: var(--green); }
+
+/* ── SHEET HUD ── */
+.sheet-hud {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0;
   border-bottom: 1px solid var(--border);
+  margin-bottom: 2.5rem;
+}
+.hud-title {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.hud-id {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: var(--green);
+  letter-spacing: 0.1em;
 }
 
+/* ── SHEET SECTIONS ── */
+.sheet-section {
+  margin-bottom: 2.5rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid var(--border);
+}
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
 .section-tag {
   font-family: 'Share Tech Mono', monospace;
-  font-size: 0.46rem; letter-spacing: 0.2em;
-  text-transform: uppercase; padding: 0.15rem 0.5rem;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.55rem;
   border: 1px solid;
+  border-radius: 2px;
 }
 .section-tag.assigned { color: var(--amber); border-color: var(--amber-b); background: var(--amber-dim); }
 .section-tag.chosen   { color: var(--cyan);  border-color: var(--cyan-b);  background: var(--cyan-dim); }
 .section-tag.both     { color: var(--green); border-color: var(--green-b); background: var(--green-dim); }
-
 .section-title {
   font-family: 'Rajdhani', sans-serif;
-  font-weight: 600; font-size: 1rem;
-  letter-spacing: 0.1em; text-transform: uppercase;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--text);
 }
-
 .section-desc {
   font-family: 'Share Tech Mono', monospace;
-  font-size: 0.48rem; letter-spacing: 0.1em;
-  color: var(--muted); margin-left: auto;
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
 }
 
-/* ── CLASSES ── */
+/* ── CLASS CARDS ── */
 .classes-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 0.5rem;
 }
-
 .class-card {
-  background: var(--panel); border: 1px solid var(--border);
-  padding: 0.7rem 0.9rem; cursor: pointer;
-  transition: all 0.18s; position: relative;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding: 0.75rem;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+  position: relative;
 }
-
-.class-card:hover { border-color: var(--border-hi); }
-
-.class-card.assigned-class {
-  border-color: var(--amber-b); background: var(--amber-dim);
-  cursor: default;
-}
-
-.class-card.chosen-class.selected {
-  border-color: var(--cyan-b); background: var(--cyan-dim);
-}
-
-.class-card-icon {
-  width: 16px; height: 16px;
-  margin-bottom: 0.5rem; display: block;
-}
-.assigned-class .class-card-icon { color: var(--amber); }
-.chosen-class .class-card-icon { color: var(--cyan); }
-
-.class-card-name {
-  font-family: 'Rajdhani', sans-serif;
-  font-weight: 600; font-size: 0.88rem;
-  letter-spacing: 0.06em; color: var(--text);
-  margin-bottom: 0.2rem;
-}
-
-.class-card.assigned-class .class-card-name { color: var(--amber); }
-.class-card.chosen-class.selected .class-card-name { color: var(--cyan); }
-
-.class-card-desc {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 0.44rem; letter-spacing: 0.06em;
-  color: var(--muted); line-height: 1.5;
-}
-
+.class-card:hover { background: var(--lift); border-color: var(--border-hi); }
 .class-card-badge {
-  position: absolute; top: 0.4rem; right: 0.5rem;
   font-family: 'Share Tech Mono', monospace;
-  font-size: 0.38rem; letter-spacing: 0.1em;
+  font-size: 8px;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
+  margin-bottom: 0.4rem;
 }
 .assigned-class .class-card-badge { color: var(--amber); }
-.chosen-class.selected .class-card-badge { color: var(--cyan); }
+.class-card-icon {
+  margin-bottom: 0.4rem;
+  display: flex;
+  align-items: center;
+}
+.assigned-class .class-card-icon { color: var(--amber); }
+.chosen-class .class-card-icon   { color: var(--cyan);  }
+.class-card-name {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+.assigned-class .class-card-name { color: var(--amber); }
+.chosen-class.selected .class-card-name { color: var(--cyan); }
+.class-card-desc {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  color: var(--muted);
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+}
+.assigned-class.selected {
+  border-color: var(--amber);
+  background: var(--amber-dim);
+}
+.chosen-class.selected {
+  border-color: var(--cyan);
+  background: var(--cyan-dim);
+}
 
 /* ── STATS ── */
 .stats-grid { display: flex; flex-direction: column; gap: 0.6rem; }
-
 .stat-row {
-  display: grid; grid-template-columns: 110px 1fr 2.5rem;
-  align-items: center; gap: 0.8rem;
+  display: grid;
+  grid-template-columns: 100px 1fr 2.5rem;
+  align-items: center;
+  gap: 0.75rem;
 }
-
 .stat-name {
   font-family: 'Share Tech Mono', monospace;
-  font-size: 0.52rem; letter-spacing: 0.1em;
-  text-transform: uppercase; color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  text-transform: uppercase;
 }
-
 .stat-bar-wrap { height: 6px; background: var(--stat-bg); position: relative; }
-
 .stat-bar-fill {
-  height: 100%; background: var(--green);
-  transition: width 0.3s ease;
-  box-shadow: 0 0 6px rgba(122,184,40,0.4);
+  position: absolute; top: 0; left: 0; height: 100%;
+  background: var(--cyan);
+  transition: width 0.1s;
 }
-
 .stat-bar-fill.assigned-fill { background: var(--amber); box-shadow: 0 0 6px rgba(200,130,10,0.4); }
-
 input[type=range].stat-slider {
-  position: absolute; top: 50%; left: 0; right: 0;
-  transform: translateY(-50%);
-  width: 100%; opacity: 0; cursor: pointer; height: 20px; margin: 0;
+  position: absolute; top: -7px; left: 0; right: 0;
+  width: 100%; opacity: 0; cursor: pointer; height: 20px;
 }
-
 .stat-val {
   font-family: 'Share Tech Mono', monospace;
-  font-size: 0.6rem; color: var(--green); text-align: right;
+  font-size: 11px;
+  color: var(--cyan);
+  text-align: right;
 }
 .stat-val.assigned-val { color: var(--amber); }
 
-/* ── TEXT FIELDS ── */
-.rpg-field { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1rem; }
-
+/* ── TEXT INPUTS ── */
+.rpg-field { margin-bottom: 1rem; }
 .field-label {
   font-family: 'Share Tech Mono', monospace;
-  font-size: 0.48rem; letter-spacing: 0.2em;
-  text-transform: uppercase; color: var(--muted);
-  display: flex; align-items: center; gap: 0.5rem;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-bottom: 0.45rem;
+  text-transform: uppercase;
 }
-.field-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
-
 .rpg-input {
-  width: 100%; background: var(--panel); border: 1px solid var(--border);
-  border-left: 3px solid var(--green);
-  color: var(--text); font-family: 'Rajdhani', sans-serif;
-  font-weight: 400; font-size: 0.9rem; letter-spacing: 0.04em;
-  padding: 0.65rem 0.9rem; outline: none; resize: none;
-  transition: border-color 0.2s;
-  line-height: 1.7;
+  width: 100%;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-left-width: 3px;
+  border-left-color: var(--border-hi);
+  color: var(--text);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  padding: 0.65rem 0.75rem;
+  resize: vertical;
+  outline: none;
+  line-height: 1.5;
+  transition: border-color 0.15s;
 }
-.rpg-input:focus { border-color: var(--border-hi); border-left-color: var(--green); }
-.rpg-input::placeholder { color: var(--faint); font-style: italic; }
-
+.rpg-input:focus { border-color: var(--border-hi); }
 .rpg-input.assigned-input { border-left-color: var(--amber); background: var(--amber-dim); }
 .rpg-input.chosen-input   { border-left-color: var(--cyan); }
-
 .field-hint {
   font-family: 'Share Tech Mono', monospace;
-  font-size: 0.42rem; letter-spacing: 0.1em;
-  color: var(--faint); min-height: 1em;
+  font-size: 9px;
+  color: var(--muted);
+  margin-top: 0.3rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
-/* Debuffs list */
-.debuff-list { display: flex; flex-direction: column; gap: 0.4rem; }
-.debuff-item {
-  display: flex; gap: 0.6rem; align-items: flex-start;
-  padding: 0.5rem 0.8rem; background: var(--panel);
-  border: 1px solid var(--border);
-}
-.debuff-type {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 0.44rem; letter-spacing: 0.1em;
-  text-transform: uppercase; flex-shrink: 0;
-  padding-top: 0.1rem;
-}
-.debuff-type.assigned { color: var(--amber); }
-.debuff-type.chosen   { color: var(--cyan); }
-
-.debuff-text {
-  font-size: 0.82rem; color: var(--muted); line-height: 1.6; flex: 1;
-}
-
-/* Nav */
+/* ── SHEET NAV ── */
 .sheet-nav {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-top: 2.5rem; padding-top: 1rem;
-  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 1.5rem;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
-
 .nav-note {
   font-family: 'Share Tech Mono', monospace;
-  font-size: 0.44rem; letter-spacing: 0.1em; color: var(--faint);
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.06em;
 }
-
 .sheet-btn {
-  background: transparent; border: 1px solid var(--border);
-  color: var(--muted); font-family: 'Share Tech Mono', monospace;
-  font-size: 0.52rem; letter-spacing: 0.18em; text-transform: uppercase;
-  padding: 0.55rem 1.2rem; cursor: pointer; transition: all 0.18s;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.75rem 1.75rem;
+  cursor: pointer;
+  border: 1px solid;
+  transition: all 0.15s;
 }
-.sheet-btn:hover { border-color: var(--green); color: var(--green); }
-.sheet-btn:disabled { opacity: 0.15; cursor: default; pointer-events: none; }
 .sheet-btn.primary {
-  background: var(--green); color: var(--bg);
+  background: var(--green-dim);
+  border-color: var(--green-b);
+  color: var(--green);
+}
+.sheet-btn.primary:hover:not(:disabled) {
+  background: rgba(122,184,40,0.18);
   border-color: var(--green);
-  box-shadow: 0 0 16px rgba(122,184,40,0.2);
 }
-.sheet-btn.primary:hover { background: var(--green-hi); box-shadow: 0 0 28px rgba(122,184,40,0.35); }
+.sheet-btn:disabled { opacity: 0.3; cursor: default; }
 
-/* Processing */
-.processing {
+/* ══════════════════════════════════════════
+   DUNGEON — dark terminal phase
+══════════════════════════════════════════ */
+#dungeon {
+  background: var(--dungeon-bg);
   font-family: 'Share Tech Mono', monospace;
-  font-size: 0.48rem; letter-spacing: 0.18em; color: var(--muted); text-transform: uppercase;
+  color: var(--dungeon-text);
+  max-width: 100%;
+  min-height: 100vh;
+  padding: 0;
+  /* scanlines intensified */
 }
-.dots-inline { display: inline-flex; gap: 0.25rem; margin-left: 0.35rem; vertical-align: middle; }
-.dots-inline span {
-  width: 3px; height: 3px; background: var(--green); border-radius: 50%;
-  animation: dp 1.2s ease-in-out infinite;
-}
-.dots-inline span:nth-child(2) { animation-delay: 0.2s; }
-.dots-inline span:nth-child(3) { animation-delay: 0.4s; }
-@keyframes dp {
-  0%,100% { opacity: 0.2; transform: scale(0.7); }
-  50% { opacity: 1; transform: scale(1); }
+#dungeon.active {
+  display: block;
 }
 
-/* ── READING SCREEN ── */
-#reading {
-  min-height: 100vh; flex-direction: column; justify-content: center;
-  padding: clamp(2rem, 6vw, 5rem);
-}
-.reading-label {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 0.5rem; letter-spacing: 0.32em;
-  color: var(--muted); text-transform: uppercase; margin-bottom: 1.5rem;
-}
-.reading-dots { display: flex; gap: 0.4rem; }
-.reading-dots span {
-  width: 5px; height: 5px; border-radius: 1px; background: var(--green);
-  animation: dp 1.4s ease-in-out infinite;
-}
-.reading-dots span:nth-child(2) { animation-delay: 0.25s; }
-.reading-dots span:nth-child(3) { animation-delay: 0.5s; }
-
-/* ── RESULT SCREEN ── */
-#result {
-  min-height: 100vh; flex-direction: column; justify-content: flex-start;
-  padding: clamp(3.5rem, 7vw, 6rem) clamp(1.5rem, 5vw, 4rem) 6rem;
-  max-width: 760px; margin: 0 auto; width: 100%;
-  background: var(--read-bg);
+/* Heavier scanlines for dungeon */
+#dungeon::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 1px,
+    rgba(0,0,0,0.12) 1px,
+    rgba(0,0,0,0.12) 2px
+  );
+  pointer-events: none;
+  z-index: 998;
 }
 
-.result-header {
-  display: flex; justify-content: space-between; align-items: flex-start;
-  margin-bottom: 3rem; padding-bottom: 1rem;
-  border-bottom: 1px solid #d0c8b8;
+.dng-inner {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 2rem clamp(1rem, 4vw, 2.5rem) 4rem;
 }
 
-.result-title {
-  font-family: 'Rajdhani', sans-serif;
-  font-weight: 700; font-size: 1.2rem;
-  letter-spacing: 0.1em; text-transform: uppercase;
-  color: var(--read-text);
-}
-
-.result-stamp {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 0.42rem; letter-spacing: 0.1em;
-  color: #b0a888; text-align: right; line-height: 2; white-space: pre;
-}
-
-/* Sheet summary */
-.sheet-summary {
-  border: 1px solid #d0c8b8; margin-bottom: 3rem;
-  opacity: 0; transition: opacity 1s ease;
-}
-.sheet-summary.visible { opacity: 1; }
-
-.summary-section {
-  border-bottom: 1px solid #d8d0c0;
-}
-.summary-section:last-child { border-bottom: none; }
-
-.summary-header {
-  padding: 0.5rem 1.2rem; background: #ece6d8;
-  border-bottom: 1px solid #d8d0c0;
-  display: flex; justify-content: space-between;
-}
-
-.summary-header-label {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 0.44rem; letter-spacing: 0.18em;
-  text-transform: uppercase; color: var(--read-muted);
-}
-
-.summary-body {
-  padding: 0.75rem 1.2rem; background: #f8f2e8;
-  font-family: 'DM Serif Display', serif;
-  font-size: 0.9rem; line-height: 1.75;
-  color: var(--read-text); white-space: pre-wrap;
-}
-
-/* Portrait */
-.result-rule {
-  width: 0; height: 1px; background: var(--read-sepia);
-  margin-bottom: 2.5rem;
-  opacity: 0; transition: opacity 0.6s ease, width 1.2s ease 0.3s;
-}
-.result-rule.visible { opacity: 1; width: 100%; }
-
-.portrait-label {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 0.46rem; letter-spacing: 0.26em;
-  text-transform: uppercase; color: var(--read-sepia);
-  margin-bottom: 1.2rem;
-  opacity: 0; transition: opacity 0.6s ease;
-}
-.portrait-label.visible { opacity: 1; }
-
-.portrait-headline {
-  font-family: 'DM Serif Display', serif;
-  font-size: clamp(1.6rem, 4vw, 2.8rem);
-  line-height: 1.2; color: var(--read-text);
+/* ── DUNGEON HEADER ── */
+.dng-header {
+  border-bottom: 1px solid var(--dungeon-dim);
+  padding-bottom: 0.75rem;
   margin-bottom: 1.5rem;
-  opacity: 0; transition: opacity 0.8s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
-.portrait-headline.visible { opacity: 1; }
-
-.portrait-body {
-  font-family: 'DM Serif Display', serif;
-  font-size: clamp(0.95rem, 1.8vw, 1.1rem);
-  line-height: 2.1; color: var(--read-text);
-  white-space: pre-wrap;
-  opacity: 0; transition: opacity 1.2s ease;
+.dng-title {
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--dungeon-dim);
 }
-.portrait-body.visible { opacity: 1; }
-
-.portrait-sig {
-  font-family: 'DM Serif Display', serif;
-  font-style: italic; font-size: clamp(0.9rem, 1.6vw, 1rem);
-  line-height: 1.9; color: var(--read-sepia);
-  border-left: 1px solid #d0c8b8; padding-left: 1.2rem;
-  margin-top: 1.5rem;
-  opacity: 0; transition: opacity 0.8s ease;
+.dng-session {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--dungeon-dim);
 }
-.portrait-sig.visible { opacity: 1; }
 
+/* ── HUD BARS ── */
+.dng-hud {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+.hud-bar {
+  flex: 1;
+  min-width: 160px;
+}
+.hud-bar-label {
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--dungeon-dim);
+  margin-bottom: 0.3rem;
+  display: flex;
+  justify-content: space-between;
+}
+.hud-bar-label span { color: var(--dungeon-text); }
+.hud-blocks {
+  font-size: 14px;
+  letter-spacing: 0.05em;
+  line-height: 1;
+}
+.hud-hp  .hud-blocks { color: #c84040; }
+.hud-mp  .hud-blocks { color: var(--cyan); }
+.hud-bar-sub {
+  font-size: 9px;
+  color: var(--dungeon-dim);
+  margin-top: 0.2rem;
+  letter-spacing: 0.06em;
+}
+
+/* ── ASCII ART ── */
+.dng-ascii {
+  font-size: clamp(7px, 1.2vw, 11px);
+  line-height: 1.15;
+  color: var(--dungeon-dim);
+  margin-bottom: 1.25rem;
+  white-space: pre;
+  overflow: hidden;
+  user-select: none;
+}
+.dng-ascii.enemy-art { color: var(--dungeon-text); opacity: 0.7; }
+.dng-ascii.location-art { color: var(--dungeon-dim); opacity: 0.55; }
+
+/* ── ENCOUNTER TEXT ── */
+.dng-encounter-num {
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--dungeon-dim);
+  margin-bottom: 0.5rem;
+}
+.dng-encounter-title {
+  font-size: 18px;
+  letter-spacing: 0.08em;
+  color: var(--dungeon-hi);
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+}
+.dng-narrative {
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--dungeon-text);
+  margin-bottom: 1.5rem;
+  max-width: 62ch;
+  opacity: 0.9;
+}
+.dng-narrative em { color: var(--dungeon-hi); font-style: normal; }
+.dng-narrative .amber { color: var(--amber); }
+.dng-narrative .cyan  { color: var(--cyan); }
+
+.dng-prompt {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dungeon-dim);
+  margin-bottom: 0.75rem;
+  border-top: 1px solid var(--dungeon-dim);
+  padding-top: 0.75rem;
+}
+
+/* ── CHOICE BUTTONS ── */
+.dng-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 1.5rem;
+}
+.dng-choice {
+  background: transparent;
+  border: 1px solid var(--dungeon-dim);
+  color: var(--dungeon-text);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  padding: 0.85rem 1rem;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s, color 0.12s;
+  line-height: 1.5;
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+.dng-choice:hover:not(:disabled) {
+  border-color: var(--dungeon-text);
+  background: rgba(122,184,40,0.05);
+}
+.dng-choice:disabled { opacity: 0.3; cursor: default; }
+.choice-tag {
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.15rem 0.4rem;
+  border: 1px solid;
+  border-radius: 1px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.choice-tag.assigned { color: var(--amber); border-color: var(--amber-b); background: var(--amber-dim); }
+.choice-tag.chosen   { color: var(--cyan);  border-color: var(--cyan-b);  background: var(--cyan-dim); }
+.choice-tag.chosen.depleted { color: var(--dungeon-dim); border-color: var(--dungeon-dim); background: transparent; }
+.choice-text { flex: 1; }
+.choice-cost {
+  font-size: 9px;
+  color: var(--dungeon-dim);
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+
+/* ── RESULT BLOCK ── */
+.dng-result {
+  border: 1px solid var(--dungeon-dim);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  display: none;
+}
+.dng-result.visible { display: block; }
+.dng-result-header {
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.dng-result-header.assigned-result { color: var(--amber); }
+.dng-result-header.chosen-result   { color: var(--cyan); }
+.dng-result-header.damage-result   { color: var(--red); }
+.dng-result-text {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--dungeon-text);
+  opacity: 0.85;
+}
+.dng-result-delta {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  margin-top: 0.5rem;
+}
+.delta-hp { color: #c84040; }
+.delta-mp { color: var(--cyan); }
+.delta-good { color: var(--green); }
+
+.dng-continue-btn {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  background: transparent;
+  border: 1px solid var(--dungeon-dim);
+  color: var(--dungeon-text);
+  padding: 0.65rem 1.5rem;
+  cursor: pointer;
+  transition: all 0.12s;
+  display: none;
+}
+.dng-continue-btn.visible { display: block; }
+.dng-continue-btn:hover { border-color: var(--dungeon-text); background: rgba(122,184,40,0.05); }
+
+/* ── DEATH SCREEN ── */
+#death { background: var(--dungeon-bg); min-height: 100vh; }
+.death-inner {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 3rem clamp(1rem,4vw,2.5rem);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.death-ascii {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: clamp(7px,1.3vw,11px);
+  line-height: 1.15;
+  color: #c84040;
+  white-space: pre;
+  margin-bottom: 2rem;
+  opacity: 0.8;
+}
+.death-title {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 22px;
+  letter-spacing: 0.14em;
+  color: #c84040;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+.death-sub {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--dungeon-dim);
+  margin-bottom: 2rem;
+  text-transform: uppercase;
+}
+.death-reading {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--dungeon-text);
+  max-width: 58ch;
+  margin-bottom: 2rem;
+  opacity: 0.85;
+  border-left: 2px solid #c84040;
+  padding-left: 1rem;
+}
+.death-btn {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: var(--red-dim);
+  border: 1px solid rgba(200,64,64,0.3);
+  color: #c84040;
+  padding: 0.7rem 1.5rem;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.death-btn:hover { background: rgba(200,64,64,0.2); border-color: #c84040; }
+
+/* ── BOSS LOADING ── */
+#bossLoading { background: var(--dungeon-bg); min-height: 100vh; }
+.boss-load-inner {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 3rem clamp(1rem,4vw,2.5rem);
+  font-family: 'Share Tech Mono', monospace;
+}
+.boss-load-line {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--dungeon-dim);
+  margin-bottom: 0.4rem;
+  opacity: 0;
+  transition: opacity 0.4s;
+  text-transform: uppercase;
+}
+.boss-load-line.visible { opacity: 1; }
+.boss-load-cursor {
+  font-size: 16px;
+  color: var(--dungeon-text);
+  animation: blink 0.8s step-end infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+/* ── FINAL BOSS ENCOUNTER ── */
+#boss { background: var(--dungeon-bg); min-height: 100vh; }
+.boss-inner {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 2rem clamp(1rem,4vw,2.5rem) 4rem;
+  font-family: 'Share Tech Mono', monospace;
+}
+.boss-warning {
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #c84040;
+  margin-bottom: 0.75rem;
+  animation: pulse-red 1.5s ease-in-out infinite;
+}
+@keyframes pulse-red { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.boss-name {
+  font-size: clamp(16px,3vw,26px);
+  letter-spacing: 0.1em;
+  color: #c84040;
+  text-transform: uppercase;
+  margin-bottom: 0.25rem;
+  line-height: 1.2;
+}
+.boss-class {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--dungeon-dim);
+  text-transform: uppercase;
+  margin-bottom: 1.5rem;
+}
+.boss-ascii {
+  font-size: clamp(7px,1.2vw,10px);
+  line-height: 1.15;
+  color: #c84040;
+  white-space: pre;
+  margin-bottom: 1.25rem;
+  opacity: 0.65;
+}
+.boss-hud {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+.boss-hp-label {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dungeon-dim);
+  margin-bottom: 0.25rem;
+}
+.boss-hp-blocks {
+  font-size: 14px;
+  color: #c84040;
+  letter-spacing: 0.05em;
+}
+.boss-narrative {
+  font-size: 12px;
+  line-height: 1.85;
+  color: var(--dungeon-text);
+  max-width: 62ch;
+  margin-bottom: 1.5rem;
+  opacity: 0.88;
+  border-left: 2px solid #c84040;
+  padding-left: 1rem;
+}
+
+/* ── FINAL READING ── */
+#finalReading { background: var(--dungeon-bg); }
+.final-inner {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 3rem clamp(1rem,4vw,2.5rem) 5rem;
+  font-family: 'Share Tech Mono', monospace;
+}
+.final-header {
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--dungeon-dim);
+  margin-bottom: 0.5rem;
+}
+.final-title {
+  font-size: clamp(18px,3.5vw,28px);
+  letter-spacing: 0.06em;
+  color: var(--dungeon-hi);
+  text-transform: uppercase;
+  margin-bottom: 2rem;
+}
+.final-run-record {
+  margin-bottom: 2rem;
+  border: 1px solid var(--dungeon-dim);
+  padding: 1rem 1.25rem;
+}
+.run-record-title {
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--dungeon-dim);
+  margin-bottom: 0.75rem;
+}
+.run-stat-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--dungeon-text);
+  margin-bottom: 0.35rem;
+  gap: 1rem;
+}
+.run-stat-label { color: var(--dungeon-dim); }
+.run-stat-val.amber { color: var(--amber); }
+.run-stat-val.cyan  { color: var(--cyan); }
+.run-stat-val.red   { color: #c84040; }
+
+.final-ai-loading {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--dungeon-dim);
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+.final-section {
+  margin-bottom: 1.75rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--dungeon-dim);
+}
+.final-section:last-child { border-bottom: none; }
+.final-section-label {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--dungeon-dim);
+  margin-bottom: 0.5rem;
+}
+.final-headline {
+  font-size: 18px;
+  letter-spacing: 0.06em;
+  color: var(--dungeon-hi);
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+  line-height: 1.3;
+}
+.final-body {
+  font-size: 12px;
+  line-height: 1.9;
+  color: var(--dungeon-text);
+  opacity: 0.9;
+  max-width: 65ch;
+}
+.final-sig {
+  font-size: 12px;
+  color: var(--amber);
+  line-height: 1.6;
+  max-width: 60ch;
+  border-left: 2px solid var(--amber);
+  padding-left: 1rem;
+}
 .disc-wrap {
-  margin-top: 2.5rem; border: 1px solid #d0c8b8;
-  opacity: 0; transition: opacity 0.8s ease;
+  margin-top: 2rem;
+  border: 1px solid var(--dungeon-dim);
+  padding: 1rem 1.25rem;
 }
-.disc-wrap.visible { opacity: 1; }
-
-.disc-header {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 0.55rem 1.2rem; background: #ece6d8;
-  border-bottom: 1px solid #d0c8b8; flex-wrap: wrap; gap: 0.4rem;
+.disc-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 .disc-label {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 0.44rem; letter-spacing: 0.22em;
-  text-transform: uppercase; color: var(--read-muted);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dungeon-dim);
 }
 .disc-note {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 0.4rem; color: #b0a888; letter-spacing: 0.1em;
-}
-.disc-item {
-  display: flex; gap: 0.8rem; align-items: flex-start;
-  padding: 0.8rem 1.2rem; border-bottom: 1px solid #d8d0c0;
-  background: #f8f2e8;
-}
-.disc-item:last-child { border-bottom: none; }
-.disc-num {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 0.42rem; color: #b0a888; flex-shrink: 0; padding-top: 0.2rem;
+  font-size: 9px;
+  color: var(--dungeon-dim);
+  opacity: 0.6;
 }
 .disc-q {
-  font-family: 'DM Serif Display', serif;
-  font-size: 0.92rem; color: var(--read-text); line-height: 1.7;
+  font-size: 12px;
+  color: var(--dungeon-text);
+  margin-bottom: 0.65rem;
+  padding-left: 1rem;
+  border-left: 1px solid var(--dungeon-dim);
+  line-height: 1.6;
+  opacity: 0.85;
 }
 
-.result-footer {
-  margin-top: 3.5rem; padding-top: 1.5rem;
-  border-top: 1px solid #d0c8b8;
-  display: flex; justify-content: space-between; align-items: center;
-  flex-wrap: wrap; gap: 0.8rem;
-  opacity: 0; transition: opacity 0.8s ease;
+.final-footer {
+  margin-top: 2.5rem;
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
-.result-footer.visible { opacity: 1; }
-.footer-note {
+.final-btn {
   font-family: 'Share Tech Mono', monospace;
-  font-size: 0.44rem; letter-spacing: 0.1em; color: #b0a888; font-style: italic;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: transparent;
+  border: 1px solid var(--dungeon-dim);
+  color: var(--dungeon-text);
+  padding: 0.65rem 1.4rem;
+  cursor: pointer;
+  transition: all 0.12s;
 }
-.footer-btns { display: flex; gap: 0.6rem; flex-wrap: wrap; }
-.result-btn {
-  background: transparent; border: 1px solid #d0c8b8;
-  color: var(--read-muted); font-family: 'Share Tech Mono', monospace;
-  font-size: 0.5rem; letter-spacing: 0.18em; text-transform: uppercase;
-  padding: 0.5rem 1rem; cursor: pointer; transition: all 0.2s;
-}
-.result-btn:hover { border-color: var(--read-sepia); color: var(--read-sepia); }
+.final-btn:hover { border-color: var(--dungeon-text); background: rgba(122,184,40,0.05); }
 
-@media (max-width: 600px) {
-  .classes-grid { grid-template-columns: 1fr 1fr; }
+/* ── MOBILE ── */
+@media (max-width: 560px) {
+  .classes-grid { grid-template-columns: repeat(2, 1fr); }
   .stat-row { grid-template-columns: 80px 1fr 2rem; }
+  .dng-hud { gap: 1rem; }
+  .hud-bar { min-width: 130px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
 }
 </style>
 </head>
@@ -603,37 +938,33 @@ input[type=range].stat-slider {
 
 <div class="prog-wrap"><div class="prog-fill" id="progFill"></div></div>
 
-<!-- INTRO -->
+<!-- ══ INTRO ══ -->
 <div id="intro" class="screen active">
   <div class="intro-sys">Identity &amp; Society · Grades 11–12 · Character Build</div>
   <div class="intro-title">RPG4LIFE</div>
   <div class="intro-tagline">// Some roles were assigned. Some were chosen. Most became part of you through repetition.</div>
-
   <p class="intro-premise">
     Identity is not a fixed trait.<br>
     It is a <strong>build</strong> — assembled from roles assigned by others,<br>
     choices made under constraint,<br>
     and scripts repeated until they feel like personality.<br><br>
     You will complete a character sheet.<br>
-    Some of it is already filled in.
+    Then the dungeon will run you through it.
   </p>
-
   <div class="intro-legend">
     <div class="legend-item assigned"><div class="legend-dot assigned"></div>Assigned — inherited, not chosen</div>
     <div class="legend-item chosen"><div class="legend-dot chosen"></div>Chosen — selected by you</div>
   </div>
-
   <button class="begin-btn" onclick="beginSheet()">Open character sheet →</button>
 </div>
 
-<!-- CHARACTER SHEET -->
+<!-- ══ CHARACTER SHEET ══ -->
 <div id="sheet" class="screen">
   <div class="sheet-hud">
     <div class="hud-title">Character Sheet // RPG4LIFE</div>
     <div class="hud-id" id="charId"></div>
   </div>
 
-  <!-- SECTION 1: CLASSES -->
   <div class="sheet-section">
     <div class="section-header">
       <span class="section-tag assigned">Assigned</span>
@@ -652,7 +983,6 @@ input[type=range].stat-slider {
     <div class="classes-grid" id="secondaryClassGrid"></div>
   </div>
 
-  <!-- SECTION 2: STATS -->
   <div class="sheet-section">
     <div class="section-header">
       <span class="section-tag assigned">Assigned</span>
@@ -671,7 +1001,6 @@ input[type=range].stat-slider {
     <div class="stats-grid" id="chosenStatsGrid"></div>
   </div>
 
-  <!-- SECTION 3: INVENTORY -->
   <div class="sheet-section">
     <div class="section-header">
       <span class="section-tag both">Both</span>
@@ -690,7 +1019,6 @@ input[type=range].stat-slider {
     </div>
   </div>
 
-  <!-- SECTION 4: BUFFS & DEBUFFS -->
   <div class="sheet-section">
     <div class="section-header">
       <span class="section-tag both">Both</span>
@@ -709,12 +1037,11 @@ input[type=range].stat-slider {
     </div>
   </div>
 
-  <!-- SECTION 5: ACTIVE QUEST & RESPEC -->
   <div class="sheet-section">
     <div class="section-header">
       <span class="section-tag chosen">Chosen</span>
-      <span class="section-title">Active Quest</span>
-      <span class="section-desc">What you are currently trying to do or become</span>
+      <span class="section-title">Active Quest &amp; Respec</span>
+      <span class="section-desc">What you are trying to do or become</span>
     </div>
     <div class="rpg-field">
       <div class="field-label">Current quest</div>
@@ -724,12 +1051,11 @@ input[type=range].stat-slider {
     <div class="rpg-field">
       <div class="field-label">Attempted respec — something about your build you are trying to change</div>
       <textarea class="rpg-input chosen-input" id="respecField" rows="2"
-        placeholder="A role you are trying to drop. A stat you are trying to raise. What is making the respec difficult?" oninput="checkSubmit()"></textarea>
+        placeholder="A role you are trying to drop. A stat you are trying to raise. What makes the respec difficult?" oninput="checkSubmit()"></textarea>
     </div>
   </div>
 
-  <!-- SECTION 6: THE CORE QUESTION -->
-  <div class="sheet-section">
+  <div class="sheet-section" style="border-bottom:none">
     <div class="section-header">
       <span class="section-tag both">Both</span>
       <span class="section-title">The Core Question</span>
@@ -738,347 +1064,394 @@ input[type=range].stat-slider {
     <div class="rpg-field">
       <div class="field-label">Which parts of this build feel like you — and which parts feel like a role you levelled into?</div>
       <textarea class="rpg-input" id="coreQuestion" rows="3"
-        placeholder="Be specific. Not 'I am kind' — what specifically feels genuinely yours versus what you play because it is expected or safe?" oninput="checkSubmit()"></textarea>
+        placeholder="Be specific. Not 'I am kind' — what specifically feels genuinely yours versus what you play because it is expected?" oninput="checkSubmit()"></textarea>
       <div class="field-hint" id="coreHint"></div>
     </div>
   </div>
 
   <div class="sheet-nav">
-    <div class="nav-note">Complete the sheet to generate your portrait.</div>
-    <button class="sheet-btn primary" id="submitBtn" onclick="submitSheet()" disabled>Generate portrait →</button>
+    <div class="nav-note">Complete the sheet to enter the dungeon.</div>
+    <button class="sheet-btn primary" id="submitBtn" onclick="enterDungeon()" disabled>Enter the dungeon →</button>
   </div>
 </div>
 
-<!-- READING -->
-<div id="reading" class="screen">
-  <div class="reading-label">Reading the build</div>
-  <div class="reading-dots"><span></span><span></span><span></span></div>
-</div>
-
-<!-- RESULT -->
-<div id="result" class="screen">
-  <div class="result-header">
-    <div class="result-title">RPG4LIFE // Build Report</div>
-    <div class="result-stamp" id="resultStamp"></div>
-  </div>
-
-  <div class="sheet-summary" id="sheetSummary"></div>
-
-  <div class="result-rule" id="resultRule"></div>
-  <div class="portrait-label" id="portraitLabel">Build Analysis</div>
-  <div class="portrait-headline" id="portraitHeadline"></div>
-  <div class="portrait-body" id="portraitBody"></div>
-  <div class="portrait-sig" id="portraitSig"></div>
-
-  <div class="disc-wrap" id="discWrap">
-    <div class="disc-header">
-      <div class="disc-label">For discussion</div>
-      <div class="disc-note">Derived from this build · for teacher use</div>
+<!-- ══ DUNGEON ══ -->
+<div id="dungeon" class="screen">
+  <div class="dng-inner">
+    <div class="dng-header">
+      <div class="dng-title">RPG4LIFE // Dungeon</div>
+      <div class="dng-session" id="dngSession"></div>
     </div>
-    <div id="discList"></div>
-  </div>
 
-  <div class="result-footer" id="resultFooter">
-    <div class="footer-note">Some roles were assigned. Some were chosen. Most became part of you through repetition.</div>
-    <div class="footer-btns">
-      <button class="result-btn" onclick="window.print()">Save / Print</button>
-      <button class="result-btn" onclick="restart()">Respec →</button>
+    <div class="dng-hud">
+      <div class="hud-bar hud-hp">
+        <div class="hud-bar-label">HP <span id="hpVal">—</span></div>
+        <div class="hud-blocks" id="hpBlocks"></div>
+        <div class="hud-bar-sub">Hit Points — capacity to survive</div>
+      </div>
+      <div class="hud-bar hud-mp">
+        <div class="hud-bar-label">MP <span id="mpVal">—</span></div>
+        <div class="hud-blocks" id="mpBlocks"></div>
+        <div class="hud-bar-sub">Chosen ability — does not regenerate</div>
+      </div>
+    </div>
+
+    <div class="dng-ascii" id="dngAscii"></div>
+
+    <div class="dng-encounter-num" id="encNum"></div>
+    <div class="dng-encounter-title" id="encTitle"></div>
+    <div class="dng-narrative" id="encNarrative"></div>
+
+    <div class="dng-prompt">// Choose your action</div>
+    <div class="dng-choices" id="dngChoices"></div>
+
+    <div class="dng-result" id="dngResult">
+      <div class="dng-result-header" id="dngResultHeader"></div>
+      <div class="dng-result-text" id="dngResultText"></div>
+      <div class="dng-result-delta" id="dngResultDelta"></div>
+    </div>
+
+    <button class="dng-continue-btn" id="dngContinueBtn" onclick="nextEncounter()">Continue →</button>
+  </div>
+</div>
+
+<!-- ══ DEATH ══ -->
+<div id="death" class="screen">
+  <div class="death-inner">
+    <div class="death-ascii" id="deathAscii"></div>
+    <div class="death-title">YOU DIED</div>
+    <div class="death-sub" id="deathSub"></div>
+    <div class="death-reading" id="deathReading"></div>
+    <button class="death-btn" onclick="restart()">← Respec and try again</button>
+  </div>
+</div>
+
+<!-- ══ BOSS LOADING ══ -->
+<div id="bossLoading" class="screen">
+  <div class="boss-load-inner">
+    <div class="boss-load-line" id="bl1">// Scanning respec entry…</div>
+    <div class="boss-load-line" id="bl2">// Identifying core resistance pattern…</div>
+    <div class="boss-load-line" id="bl3">// Assembling final encounter…</div>
+    <div class="boss-load-line" id="bl4">// This one knows your build.</div>
+    <div class="boss-load-line" id="bl5"><span class="boss-load-cursor">█</span></div>
+  </div>
+</div>
+
+<!-- ══ FINAL BOSS ══ -->
+<div id="boss" class="screen">
+  <div class="boss-inner">
+    <div class="dng-hud" style="margin-bottom:1.5rem">
+      <div class="hud-bar hud-hp">
+        <div class="hud-bar-label">HP <span id="bossHpVal">—</span></div>
+        <div class="hud-blocks" id="bossHpBlocks"></div>
+      </div>
+      <div class="hud-bar hud-mp">
+        <div class="hud-bar-label">MP <span id="bossMpVal">—</span></div>
+        <div class="hud-blocks" id="bossMpBlocks"></div>
+      </div>
+    </div>
+    <div class="boss-warning">⚠ FINAL ENCOUNTER</div>
+    <div class="boss-ascii" id="bossAscii"></div>
+    <div class="boss-name" id="bossName"></div>
+    <div class="boss-class" id="bossClass"></div>
+    <div class="boss-narrative" id="bossNarrative"></div>
+
+    <div class="dng-prompt">// Choose your action</div>
+    <div class="dng-choices" id="bossChoices"></div>
+
+    <div class="dng-result" id="bossResult">
+      <div class="dng-result-header" id="bossResultHeader"></div>
+      <div class="dng-result-text" id="bossResultText"></div>
+      <div class="dng-result-delta" id="bossResultDelta"></div>
+    </div>
+
+    <button class="dng-continue-btn" id="bossContinueBtn" onclick="resolveBoss()">Continue →</button>
+  </div>
+</div>
+
+<!-- ══ FINAL READING ══ -->
+<div id="finalReading" class="screen">
+  <div class="final-inner">
+    <div class="final-header">RPG4LIFE // Run Complete</div>
+    <div class="final-title" id="finalTitle"></div>
+
+    <div class="final-run-record">
+      <div class="run-record-title">// Run record</div>
+      <div id="runRecordRows"></div>
+    </div>
+
+    <div class="final-ai-loading" id="finalAiLoading">// Generating build analysis…<span class="boss-load-cursor">█</span></div>
+
+    <div id="finalContent" style="display:none">
+      <div class="final-section">
+        <div class="final-section-label">Headline</div>
+        <div class="final-headline" id="finalHeadline"></div>
+      </div>
+      <div class="final-section">
+        <div class="final-section-label">Reading</div>
+        <div class="final-body" id="finalBody"></div>
+      </div>
+      <div class="final-section">
+        <div class="final-section-label">Signature</div>
+        <div class="final-sig" id="finalSig"></div>
+      </div>
+      <div class="disc-wrap">
+        <div class="disc-header-row">
+          <div class="disc-label">For discussion</div>
+          <div class="disc-note">Derived from this build · teacher use</div>
+        </div>
+        <div id="finalDisc"></div>
+      </div>
+    </div>
+
+    <div class="final-footer">
+      <button class="final-btn" onclick="window.print()">Save / Print</button>
+      <button class="final-btn" onclick="restart()">Respec →</button>
     </div>
   </div>
 </div>
 
 <script>
-const PROXY = "https://anthropic-proxy.justin-steinmetz.workers.dev";
+const PROXY = 'https://anthropic-proxy.justin-steinmetz.workers.dev';
 
-// ── PIXEL ART ICONS (16×16 SVG, currentColor, 1-bit) ──
+// ── PIXEL ART ICONS ──
 const ICONS = {
-  // ASSIGNED — crown, star, orb, bridge, shield, broken-circle, trophy, lightning
-  eldest: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
-    <rect x="2" y="10" width="12" height="2" fill="currentColor"/>
-    <rect x="2" y="12" width="12" height="2" fill="currentColor"/>
-    <rect x="2" y="8" width="2" height="2" fill="currentColor"/>
-    <rect x="7" y="8" width="2" height="2" fill="currentColor"/>
-    <rect x="12" y="8" width="2" height="2" fill="currentColor"/>
-    <rect x="2" y="4" width="2" height="4" fill="currentColor"/>
-    <rect x="12" y="4" width="2" height="4" fill="currentColor"/>
-    <rect x="7" y="2" width="2" height="6" fill="currentColor"/>
-    <rect x="5" y="4" width="2" height="2" fill="currentColor"/>
-    <rect x="9" y="4" width="2" height="2" fill="currentColor"/>
-  </svg>`,
-
-  youngest: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
-    <rect x="7" y="1" width="2" height="2" fill="currentColor"/>
-    <rect x="4" y="3" width="2" height="2" fill="currentColor"/>
-    <rect x="10" y="3" width="2" height="2" fill="currentColor"/>
-    <rect x="3" y="6" width="2" height="2" fill="currentColor"/>
-    <rect x="11" y="6" width="2" height="2" fill="currentColor"/>
-    <rect x="4" y="9" width="2" height="2" fill="currentColor"/>
-    <rect x="10" y="9" width="2" height="2" fill="currentColor"/>
-    <rect x="6" y="5" width="4" height="4" fill="currentColor"/>
-    <rect x="7" y="11" width="2" height="2" fill="currentColor"/>
-    <rect x="6" y="13" width="4" height="2" fill="currentColor"/>
-  </svg>`,
-
-  only: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
-    <rect x="6" y="2" width="4" height="2" fill="currentColor"/>
-    <rect x="4" y="4" width="2" height="2" fill="currentColor"/>
-    <rect x="10" y="4" width="2" height="2" fill="currentColor"/>
-    <rect x="3" y="6" width="2" height="4" fill="currentColor"/>
-    <rect x="11" y="6" width="2" height="4" fill="currentColor"/>
-    <rect x="4" y="10" width="2" height="2" fill="currentColor"/>
-    <rect x="10" y="10" width="2" height="2" fill="currentColor"/>
-    <rect x="6" y="12" width="4" height="2" fill="currentColor"/>
-    <rect x="6" y="6" width="4" height="4" fill="currentColor"/>
-  </svg>`,
-
-  middle: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
-    <rect x="1" y="7" width="14" height="2" fill="currentColor"/>
-    <rect x="1" y="5" width="4" height="2" fill="currentColor"/>
-    <rect x="1" y="9" width="4" height="2" fill="currentColor"/>
-    <rect x="11" y="5" width="4" height="2" fill="currentColor"/>
-    <rect x="11" y="9" width="4" height="2" fill="currentColor"/>
-    <rect x="1" y="3" width="4" height="2" fill="currentColor"/>
-    <rect x="1" y="11" width="4" height="2" fill="currentColor"/>
-    <rect x="11" y="3" width="4" height="2" fill="currentColor"/>
-    <rect x="11" y="11" width="4" height="2" fill="currentColor"/>
-  </svg>`,
-
-  caretaker: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
-    <rect x="3" y="8" width="2" height="6" fill="currentColor"/>
-    <rect x="11" y="8" width="2" height="6" fill="currentColor"/>
-    <rect x="5" y="12" width="6" height="2" fill="currentColor"/>
-    <rect x="2" y="6" width="2" height="2" fill="currentColor"/>
-    <rect x="12" y="6" width="2" height="2" fill="currentColor"/>
-    <rect x="4" y="4" width="2" height="2" fill="currentColor"/>
-    <rect x="10" y="4" width="2" height="2" fill="currentColor"/>
-    <rect x="6" y="2" width="4" height="4" fill="currentColor"/>
-    <rect x="5" y="6" width="6" height="2" fill="currentColor"/>
-  </svg>`,
-
-  outsider: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
-    <rect x="6" y="2" width="4" height="2" fill="currentColor"/>
-    <rect x="4" y="4" width="2" height="2" fill="currentColor"/>
-    <rect x="10" y="4" width="2" height="2" fill="currentColor"/>
-    <rect x="3" y="6" width="2" height="4" fill="currentColor"/>
-    <rect x="4" y="10" width="2" height="2" fill="currentColor"/>
-    <rect x="6" y="12" width="4" height="2" fill="currentColor"/>
-    <rect x="10" y="10" width="2" height="2" fill="currentColor"/>
-    <rect x="9" y="5" width="5" height="2" fill="currentColor"/>
-    <rect x="12" y="7" width="2" height="2" fill="currentColor"/>
-    <rect x="9" y="9" width="5" height="2" fill="currentColor"/>
-  </svg>`,
-
-  achiever: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
-    <rect x="4" y="2" width="8" height="2" fill="currentColor"/>
-    <rect x="3" y="4" width="2" height="4" fill="currentColor"/>
-    <rect x="11" y="4" width="2" height="4" fill="currentColor"/>
-    <rect x="4" y="8" width="8" height="2" fill="currentColor"/>
-    <rect x="5" y="10" width="6" height="2" fill="currentColor"/>
-    <rect x="6" y="12" width="4" height="2" fill="currentColor"/>
-    <rect x="5" y="14" width="6" height="2" fill="currentColor"/>
-    <rect x="6" y="5" width="4" height="2" fill="currentColor"/>
-  </svg>`,
-
-  rebel: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
-    <rect x="7" y="1" width="4" height="2" fill="currentColor"/>
-    <rect x="6" y="3" width="2" height="2" fill="currentColor"/>
-    <rect x="5" y="5" width="4" height="2" fill="currentColor"/>
-    <rect x="4" y="7" width="6" height="2" fill="currentColor"/>
-    <rect x="6" y="9" width="4" height="2" fill="currentColor"/>
-    <rect x="7" y="11" width="2" height="4" fill="currentColor"/>
-    <rect x="9" y="5" width="2" height="2" fill="currentColor"/>
-    <rect x="10" y="7" width="2" height="2" fill="currentColor"/>
-  </svg>`,
-
-  // CHOSEN — banner, heart/plus, mask, book, tower, question, pencil, handshake, moon, nodes, star, cube
-  leader: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
-    <rect x="3" y="2" width="2" height="12" fill="currentColor"/>
-    <rect x="5" y="2" width="8" height="2" fill="currentColor"/>
-    <rect x="5" y="4" width="8" height="2" fill="currentColor"/>
-    <rect x="5" y="6" width="6" height="2" fill="currentColor"/>
-    <rect x="13" y="4" width="2" height="4" fill="currentColor"/>
-    <rect x="5" y="8" width="8" height="2" fill="currentColor"/>
-  </svg>`,
-
-  helper: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
-    <rect x="6" y="2" width="4" height="2" fill="currentColor"/>
-    <rect x="4" y="4" width="8" height="2" fill="currentColor"/>
-    <rect x="3" y="6" width="10" height="2" fill="currentColor"/>
-    <rect x="4" y="8" width="8" height="2" fill="currentColor"/>
-    <rect x="5" y="10" width="6" height="2" fill="currentColor"/>
-    <rect x="6" y="12" width="4" height="2" fill="currentColor"/>
-    <rect x="7" y="14" width="2" height="1" fill="currentColor"/>
-  </svg>`,
-
-  performer: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
-    <rect x="4" y="2" width="8" height="2" fill="currentColor"/>
-    <rect x="2" y="4" width="2" height="6" fill="currentColor"/>
-    <rect x="12" y="4" width="2" height="6" fill="currentColor"/>
-    <rect x="4" y="10" width="2" height="2" fill="currentColor"/>
-    <rect x="10" y="10" width="2" height="2" fill="currentColor"/>
-    <rect x="6" y="12" width="4" height="2" fill="currentColor"/>
-    <rect x="5" y="6" width="2" height="2" fill="currentColor"/>
-    <rect x="9" y="6" width="2" height="2" fill="currentColor"/>
-    <rect x="5" y="8" width="6" height="1" fill="currentColor"/>
-  </svg>`,
-
-  scholar: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
-    <rect x="3" y="2" width="10" height="2" fill="currentColor"/>
-    <rect x="3" y="4" width="2" height="8" fill="currentColor"/>
-    <rect x="11" y="4" width="2" height="8" fill="currentColor"/>
-    <rect x="3" y="12" width="10" height="2" fill="currentColor"/>
-    <rect x="5" y="5" width="6" height="1" fill="currentColor"/>
-    <rect x="5" y="7" width="6" height="1" fill="currentColor"/>
-    <rect x="5" y="9" width="4" height="1" fill="currentColor"/>
-    <rect x="7" y="2" width="2" height="2" fill="currentColor"/>
-  </svg>`,
-
-  protector: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
-    <rect x="4" y="2" width="8" height="2" fill="currentColor"/>
-    <rect x="2" y="4" width="2" height="8" fill="currentColor"/>
-    <rect x="12" y="4" width="2" height="8" fill="currentColor"/>
-    <rect x="4" y="12" width="2" height="2" fill="currentColor"/>
-    <rect x="10" y="12" width="2" height="2" fill="currentColor"/>
-    <rect x="6" y="13" width="4" height="2" fill="currentColor"/>
-    <rect x="4" y="4" width="8" height="2" fill="currentColor"/>
-    <rect x="7" y="6" width="2" height="6" fill="currentColor"/>
-    <rect x="5" y="8" width="6" height="2" fill="currentColor"/>
-  </svg>`,
-
-  skeptic: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
-    <rect x="5" y="2" width="6" height="2" fill="currentColor"/>
-    <rect x="3" y="4" width="2" height="2" fill="currentColor"/>
-    <rect x="11" y="4" width="2" height="2" fill="currentColor"/>
-    <rect x="9" y="6" width="2" height="2" fill="currentColor"/>
-    <rect x="7" y="8" width="2" height="2" fill="currentColor"/>
-    <rect x="7" y="12" width="2" height="2" fill="currentColor"/>
-  </svg>`,
-
-  creator: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
-    <rect x="10" y="2" width="4" height="2" fill="currentColor"/>
-    <rect x="9" y="4" width="2" height="2" fill="currentColor"/>
-    <rect x="7" y="6" width="2" height="2" fill="currentColor"/>
-    <rect x="5" y="8" width="2" height="2" fill="currentColor"/>
-    <rect x="3" y="10" width="2" height="2" fill="currentColor"/>
-    <rect x="2" y="12" width="4" height="2" fill="currentColor"/>
-    <rect x="11" y="4" width="2" height="2" fill="currentColor"/>
-    <rect x="10" y="6" width="2" height="2" fill="currentColor"/>
-  </svg>`,
-
-  diplomat: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
-    <rect x="1" y="6" width="4" height="2" fill="currentColor"/>
-    <rect x="1" y="8" width="4" height="2" fill="currentColor"/>
-    <rect x="11" y="6" width="4" height="2" fill="currentColor"/>
-    <rect x="11" y="8" width="4" height="2" fill="currentColor"/>
-    <rect x="5" y="5" width="2" height="2" fill="currentColor"/>
-    <rect x="9" y="5" width="2" height="2" fill="currentColor"/>
-    <rect x="5" y="9" width="2" height="2" fill="currentColor"/>
-    <rect x="9" y="9" width="2" height="2" fill="currentColor"/>
-    <rect x="7" y="4" width="2" height="8" fill="currentColor"/>
-  </svg>`,
-
-  loner: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
-    <rect x="8" y="2" width="2" height="2" fill="currentColor"/>
-    <rect x="10" y="4" width="2" height="2" fill="currentColor"/>
-    <rect x="11" y="6" width="2" height="4" fill="currentColor"/>
-    <rect x="10" y="10" width="2" height="2" fill="currentColor"/>
-    <rect x="8" y="12" width="4" height="2" fill="currentColor"/>
-    <rect x="5" y="11" width="2" height="2" fill="currentColor"/>
-    <rect x="3" y="8" width="2" height="4" fill="currentColor"/>
-    <rect x="4" y="6" width="2" height="2" fill="currentColor"/>
-    <rect x="6" y="4" width="4" height="2" fill="currentColor"/>
-    <rect x="6" y="7" width="4" height="2" fill="currentColor"/>
-  </svg>`,
-
-  connector: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
-    <rect x="1" y="2" width="4" height="4" fill="currentColor"/>
-    <rect x="11" y="2" width="4" height="4" fill="currentColor"/>
-    <rect x="6" y="8" width="4" height="4" fill="currentColor"/>
-    <rect x="5" y="4" width="6" height="2" fill="currentColor"/>
-    <rect x="4" y="6" width="2" height="4" fill="currentColor"/>
-    <rect x="10" y="6" width="2" height="4" fill="currentColor"/>
-  </svg>`,
-
-  idealist: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
-    <rect x="7" y="1" width="2" height="3" fill="currentColor"/>
-    <rect x="11" y="3" width="2" height="2" fill="currentColor"/>
-    <rect x="12" y="5" width="2" height="2" fill="currentColor"/>
-    <rect x="3" y="3" width="2" height="2" fill="currentColor"/>
-    <rect x="2" y="5" width="2" height="2" fill="currentColor"/>
-    <rect x="5" y="5" width="6" height="4" fill="currentColor"/>
-    <rect x="4" y="7" width="8" height="2" fill="currentColor"/>
-    <rect x="5" y="9" width="6" height="2" fill="currentColor"/>
-    <rect x="6" y="11" width="4" height="2" fill="currentColor"/>
-    <rect x="7" y="13" width="2" height="2" fill="currentColor"/>
-  </svg>`,
-
-  realist: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
-    <rect x="3" y="3" width="10" height="2" fill="currentColor"/>
-    <rect x="3" y="5" width="2" height="8" fill="currentColor"/>
-    <rect x="11" y="5" width="2" height="8" fill="currentColor"/>
-    <rect x="3" y="13" width="10" height="2" fill="currentColor"/>
-    <rect x="5" y="5" width="6" height="2" fill="currentColor"/>
-    <rect x="5" y="11" width="6" height="2" fill="currentColor"/>
-    <rect x="5" y="7" width="2" height="4" fill="currentColor"/>
-    <rect x="9" y="7" width="2" height="4" fill="currentColor"/>
-  </svg>`,
+  eldest: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect x="2" y="10" width="12" height="2" fill="currentColor"/><rect x="2" y="12" width="12" height="2" fill="currentColor"/><rect x="2" y="8" width="2" height="2" fill="currentColor"/><rect x="7" y="8" width="2" height="2" fill="currentColor"/><rect x="12" y="8" width="2" height="2" fill="currentColor"/><rect x="2" y="4" width="2" height="4" fill="currentColor"/><rect x="12" y="4" width="2" height="4" fill="currentColor"/><rect x="7" y="2" width="2" height="6" fill="currentColor"/><rect x="5" y="4" width="2" height="2" fill="currentColor"/><rect x="9" y="4" width="2" height="2" fill="currentColor"/></svg>`,
+  youngest: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect x="7" y="1" width="2" height="2" fill="currentColor"/><rect x="4" y="3" width="2" height="2" fill="currentColor"/><rect x="10" y="3" width="2" height="2" fill="currentColor"/><rect x="3" y="6" width="2" height="2" fill="currentColor"/><rect x="11" y="6" width="2" height="2" fill="currentColor"/><rect x="4" y="9" width="2" height="2" fill="currentColor"/><rect x="10" y="9" width="2" height="2" fill="currentColor"/><rect x="6" y="5" width="4" height="4" fill="currentColor"/><rect x="7" y="11" width="2" height="2" fill="currentColor"/><rect x="6" y="13" width="4" height="2" fill="currentColor"/></svg>`,
+  only: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect x="6" y="2" width="4" height="2" fill="currentColor"/><rect x="4" y="4" width="2" height="2" fill="currentColor"/><rect x="10" y="4" width="2" height="2" fill="currentColor"/><rect x="3" y="6" width="2" height="4" fill="currentColor"/><rect x="11" y="6" width="2" height="4" fill="currentColor"/><rect x="4" y="10" width="2" height="2" fill="currentColor"/><rect x="10" y="10" width="2" height="2" fill="currentColor"/><rect x="6" y="12" width="4" height="2" fill="currentColor"/><rect x="6" y="6" width="4" height="4" fill="currentColor"/></svg>`,
+  middle: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect x="1" y="7" width="14" height="2" fill="currentColor"/><rect x="1" y="5" width="4" height="2" fill="currentColor"/><rect x="1" y="9" width="4" height="2" fill="currentColor"/><rect x="11" y="5" width="4" height="2" fill="currentColor"/><rect x="11" y="9" width="4" height="2" fill="currentColor"/><rect x="1" y="3" width="4" height="2" fill="currentColor"/><rect x="1" y="11" width="4" height="2" fill="currentColor"/><rect x="11" y="3" width="4" height="2" fill="currentColor"/><rect x="11" y="11" width="4" height="2" fill="currentColor"/></svg>`,
+  caretaker: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect x="3" y="8" width="2" height="6" fill="currentColor"/><rect x="11" y="8" width="2" height="6" fill="currentColor"/><rect x="5" y="12" width="6" height="2" fill="currentColor"/><rect x="2" y="6" width="2" height="2" fill="currentColor"/><rect x="12" y="6" width="2" height="2" fill="currentColor"/><rect x="4" y="4" width="2" height="2" fill="currentColor"/><rect x="10" y="4" width="2" height="2" fill="currentColor"/><rect x="6" y="2" width="4" height="4" fill="currentColor"/><rect x="5" y="6" width="6" height="2" fill="currentColor"/></svg>`,
+  outsider: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect x="6" y="2" width="4" height="2" fill="currentColor"/><rect x="4" y="4" width="2" height="2" fill="currentColor"/><rect x="10" y="4" width="2" height="2" fill="currentColor"/><rect x="3" y="6" width="2" height="4" fill="currentColor"/><rect x="4" y="10" width="2" height="2" fill="currentColor"/><rect x="6" y="12" width="4" height="2" fill="currentColor"/><rect x="10" y="10" width="2" height="2" fill="currentColor"/><rect x="9" y="5" width="5" height="2" fill="currentColor"/><rect x="12" y="7" width="2" height="2" fill="currentColor"/><rect x="9" y="9" width="5" height="2" fill="currentColor"/></svg>`,
+  achiever: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect x="4" y="2" width="8" height="2" fill="currentColor"/><rect x="3" y="4" width="2" height="4" fill="currentColor"/><rect x="11" y="4" width="2" height="4" fill="currentColor"/><rect x="4" y="8" width="8" height="2" fill="currentColor"/><rect x="5" y="10" width="6" height="2" fill="currentColor"/><rect x="6" y="12" width="4" height="2" fill="currentColor"/><rect x="5" y="14" width="6" height="2" fill="currentColor"/><rect x="6" y="5" width="4" height="2" fill="currentColor"/></svg>`,
+  rebel: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect x="7" y="1" width="4" height="2" fill="currentColor"/><rect x="6" y="3" width="2" height="2" fill="currentColor"/><rect x="5" y="5" width="4" height="2" fill="currentColor"/><rect x="4" y="7" width="6" height="2" fill="currentColor"/><rect x="6" y="9" width="4" height="2" fill="currentColor"/><rect x="7" y="11" width="2" height="4" fill="currentColor"/><rect x="9" y="5" width="2" height="2" fill="currentColor"/><rect x="10" y="7" width="2" height="2" fill="currentColor"/></svg>`,
+  leader: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect x="3" y="2" width="2" height="12" fill="currentColor"/><rect x="5" y="2" width="8" height="2" fill="currentColor"/><rect x="5" y="4" width="8" height="2" fill="currentColor"/><rect x="5" y="6" width="6" height="2" fill="currentColor"/><rect x="13" y="4" width="2" height="4" fill="currentColor"/><rect x="5" y="8" width="8" height="2" fill="currentColor"/></svg>`,
+  helper: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect x="6" y="2" width="4" height="2" fill="currentColor"/><rect x="4" y="4" width="8" height="2" fill="currentColor"/><rect x="3" y="6" width="10" height="2" fill="currentColor"/><rect x="4" y="8" width="8" height="2" fill="currentColor"/><rect x="5" y="10" width="6" height="2" fill="currentColor"/><rect x="6" y="12" width="4" height="2" fill="currentColor"/><rect x="7" y="14" width="2" height="1" fill="currentColor"/></svg>`,
+  performer: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect x="4" y="2" width="8" height="2" fill="currentColor"/><rect x="2" y="4" width="2" height="6" fill="currentColor"/><rect x="12" y="4" width="2" height="6" fill="currentColor"/><rect x="4" y="10" width="2" height="2" fill="currentColor"/><rect x="10" y="10" width="2" height="2" fill="currentColor"/><rect x="6" y="12" width="4" height="2" fill="currentColor"/><rect x="5" y="6" width="2" height="2" fill="currentColor"/><rect x="9" y="6" width="2" height="2" fill="currentColor"/><rect x="5" y="8" width="6" height="1" fill="currentColor"/></svg>`,
+  scholar: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect x="3" y="2" width="10" height="2" fill="currentColor"/><rect x="3" y="4" width="2" height="8" fill="currentColor"/><rect x="11" y="4" width="2" height="8" fill="currentColor"/><rect x="3" y="12" width="10" height="2" fill="currentColor"/><rect x="5" y="5" width="6" height="1" fill="currentColor"/><rect x="5" y="7" width="6" height="1" fill="currentColor"/><rect x="5" y="9" width="4" height="1" fill="currentColor"/><rect x="7" y="2" width="2" height="2" fill="currentColor"/></svg>`,
+  protector: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect x="4" y="2" width="8" height="2" fill="currentColor"/><rect x="2" y="4" width="2" height="8" fill="currentColor"/><rect x="12" y="4" width="2" height="8" fill="currentColor"/><rect x="4" y="12" width="2" height="2" fill="currentColor"/><rect x="10" y="12" width="2" height="2" fill="currentColor"/><rect x="6" y="13" width="4" height="2" fill="currentColor"/><rect x="4" y="4" width="8" height="2" fill="currentColor"/><rect x="7" y="6" width="2" height="6" fill="currentColor"/><rect x="5" y="8" width="6" height="2" fill="currentColor"/></svg>`,
+  skeptic: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect x="5" y="2" width="6" height="2" fill="currentColor"/><rect x="3" y="4" width="2" height="2" fill="currentColor"/><rect x="11" y="4" width="2" height="2" fill="currentColor"/><rect x="9" y="6" width="2" height="2" fill="currentColor"/><rect x="7" y="8" width="2" height="2" fill="currentColor"/><rect x="7" y="12" width="2" height="2" fill="currentColor"/></svg>`,
+  creator: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect x="10" y="2" width="4" height="2" fill="currentColor"/><rect x="9" y="4" width="2" height="2" fill="currentColor"/><rect x="7" y="6" width="2" height="2" fill="currentColor"/><rect x="5" y="8" width="2" height="2" fill="currentColor"/><rect x="3" y="10" width="2" height="2" fill="currentColor"/><rect x="2" y="12" width="4" height="2" fill="currentColor"/><rect x="11" y="4" width="2" height="2" fill="currentColor"/><rect x="10" y="6" width="2" height="2" fill="currentColor"/></svg>`,
+  diplomat: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect x="1" y="6" width="4" height="2" fill="currentColor"/><rect x="1" y="8" width="4" height="2" fill="currentColor"/><rect x="11" y="6" width="4" height="2" fill="currentColor"/><rect x="11" y="8" width="4" height="2" fill="currentColor"/><rect x="5" y="5" width="2" height="2" fill="currentColor"/><rect x="9" y="5" width="2" height="2" fill="currentColor"/><rect x="5" y="9" width="2" height="2" fill="currentColor"/><rect x="9" y="9" width="2" height="2" fill="currentColor"/><rect x="7" y="4" width="2" height="8" fill="currentColor"/></svg>`,
+  loner: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect x="8" y="2" width="2" height="2" fill="currentColor"/><rect x="10" y="4" width="2" height="2" fill="currentColor"/><rect x="11" y="6" width="2" height="4" fill="currentColor"/><rect x="10" y="10" width="2" height="2" fill="currentColor"/><rect x="8" y="12" width="4" height="2" fill="currentColor"/><rect x="5" y="11" width="2" height="2" fill="currentColor"/><rect x="3" y="8" width="2" height="4" fill="currentColor"/><rect x="4" y="6" width="2" height="2" fill="currentColor"/><rect x="6" y="4" width="4" height="2" fill="currentColor"/><rect x="6" y="7" width="4" height="2" fill="currentColor"/></svg>`,
+  connector: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect x="1" y="2" width="4" height="4" fill="currentColor"/><rect x="11" y="2" width="4" height="4" fill="currentColor"/><rect x="6" y="8" width="4" height="4" fill="currentColor"/><rect x="5" y="4" width="6" height="2" fill="currentColor"/><rect x="4" y="6" width="2" height="4" fill="currentColor"/><rect x="10" y="6" width="2" height="4" fill="currentColor"/></svg>`,
+  idealist: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect x="7" y="1" width="2" height="3" fill="currentColor"/><rect x="11" y="3" width="2" height="2" fill="currentColor"/><rect x="12" y="5" width="2" height="2" fill="currentColor"/><rect x="3" y="3" width="2" height="2" fill="currentColor"/><rect x="2" y="5" width="2" height="2" fill="currentColor"/><rect x="5" y="5" width="6" height="4" fill="currentColor"/><rect x="4" y="7" width="8" height="2" fill="currentColor"/><rect x="5" y="9" width="6" height="2" fill="currentColor"/><rect x="6" y="11" width="4" height="2" fill="currentColor"/><rect x="7" y="13" width="2" height="2" fill="currentColor"/></svg>`,
+  realist: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect x="3" y="3" width="10" height="2" fill="currentColor"/><rect x="3" y="5" width="2" height="8" fill="currentColor"/><rect x="11" y="5" width="2" height="8" fill="currentColor"/><rect x="3" y="13" width="10" height="2" fill="currentColor"/><rect x="5" y="5" width="6" height="2" fill="currentColor"/><rect x="5" y="11" width="6" height="2" fill="currentColor"/><rect x="5" y="7" width="2" height="4" fill="currentColor"/><rect x="9" y="7" width="2" height="4" fill="currentColor"/></svg>`,
 };
 
-// ── CLASS DEFINITIONS ──
+// ── ASCII ART ──
+const ASCII = {
+  dungeon_entrance: `
+  ╔══════════════════════════════════╗
+  ║  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ║
+  ║  ▓░░░░░░░░░░░░░░░░░░░░░░░░░▓  ║
+  ║  ▓░  [ DUNGEON ENTRANCE ]  ░▓  ║
+  ║  ▓░░░░░░░░░░░░░░░░░░░░░░░░░▓  ║
+  ║  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ║
+  ╚══════════════════════════════════╝`,
+
+  family_hall: `
+  ┌─────────────────────────────┐
+  │  THE FAMILY HALL            │
+  │  ═══════════════            │
+  │  [ ]  [ ]  [ ]  [ ]        │
+  │   ╚════╝    ╚════╝          │
+  │       ┌──────┐              │
+  │       │  YOU │              │
+  │       └──────┘              │
+  └─────────────────────────────┘`,
+
+  social_arena: `
+  ┌─────────────────────────────┐
+  │  THE SOCIAL ARENA           │
+  │  ◉  ◉  ◉  ◉  ◉  ◉         │
+  │     ↕  ↕  ↕  ↕             │
+  │  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓          │
+  │  ▓  [  YOU ARE HERE  ]  ▓  │
+  │  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  │
+  └─────────────────────────────┘`,
+
+  authority_tower: `
+  ┌─────────────────────────────┐
+  │         ▲ ▲ ▲               │
+  │        ███████              │
+  │       █████████             │
+  │      ███████████            │
+  │      █ AUTHORITY █          │
+  │      ███████████            │
+  │  ────────────────────────── │
+  └─────────────────────────────┘`,
+
+  ambition_peak: `
+  ┌─────────────────────────────┐
+  │              *              │
+  │             /|\\             │
+  │            / | \\            │
+  │           /  |  \\           │
+  │          / PEAK  \\          │
+  │         /________ \\         │
+  │  ──────────────────────── ─ │
+  └─────────────────────────────┘`,
+
+  boss_room: `
+  ╔══════════════════════════════╗
+  ║ ░░░░░░░░░░░░░░░░░░░░░░░░░░ ║
+  ║ ░  ╔══════════════════╗  ░ ║
+  ║ ░  ║   BOSS  CHAMBER  ║  ░ ║
+  ║ ░  ╚══════════════════╝  ░ ║
+  ║ ░░░░░░░░░░░░░░░░░░░░░░░░░░ ║
+  ╚══════════════════════════════╝`,
+
+  death_screen: `
+  ██╗   ██╗ ██████╗ ██╗   ██╗
+  ╚██╗ ██╔╝██╔═══██╗██║   ██║
+   ╚████╔╝ ██║   ██║██║   ██║
+    ╚██╔╝  ██║   ██║██║   ██║
+     ██║   ╚██████╔╝╚██████╔╝
+     ╚═╝    ╚═════╝  ╚═════╝
+  ██████╗ ██╗███████╗██████╗
+  ██╔══██╗██║██╔════╝██╔══██╗
+  ██║  ██║██║█████╗  ██║  ██║
+  ██║  ██║██║██╔══╝  ██║  ██║
+  ██████╔╝██║███████╗██████╔╝
+  ╚═════╝ ╚═╝╚══════╝╚═════╝ `,
+
+  boss_sprite: `
+     ╔═══════════════╗
+    ╔╣  ░░ RESPEC ░░ ╠╗
+    ║╚═══════════════╝║
+    ║  ┌───────────┐  ║
+    ║  │ ◈       ◈ │  ║
+    ║  │     △     │  ║
+    ║  │  ═══════  │  ║
+    ║  └───────────┘  ║
+    ╚═══╦═════════╦═══╝
+        ║  YOUR   ║
+        ║  BUILD  ║
+        ╚═════════╝`,
+};
+
+// ── CLASS & STAT DATA ──
 const PRIMARY_CLASSES = [
-  { id: 'eldest',    name: 'Eldest Child',     desc: 'Responsibility assigned before consent. Leadership by default.' },
-  { id: 'youngest',  name: 'Youngest Child',   desc: 'Indulged or overlooked. The role of becoming.' },
-  { id: 'only',      name: 'Only Child',       desc: 'Undivided attention. Undivided expectation.' },
-  { id: 'middle',    name: 'Middle Child',     desc: 'The negotiator. Identity built in the gap.' },
-  { id: 'caretaker', name: 'Caretaker',        desc: 'Assigned emotional or practical responsibility for others.' },
-  { id: 'outsider',  name: 'Outsider',         desc: 'Placed outside the group before choosing to leave it.' },
-  { id: 'achiever',  name: 'The Achiever',     desc: 'Success as the primary assigned identity.' },
-  { id: 'rebel',     name: 'The Rebel',        desc: 'Resistance as role. Opposition as definition.' },
+  { id:'eldest',    name:'Eldest Child',    desc:'Responsibility assigned before consent. Leadership by default.' },
+  { id:'youngest',  name:'Youngest Child',  desc:'Indulged or overlooked. The role of becoming.' },
+  { id:'only',      name:'Only Child',      desc:'Undivided attention. Undivided expectation.' },
+  { id:'middle',    name:'Middle Child',    desc:'The negotiator. Identity built in the gap.' },
+  { id:'caretaker', name:'Caretaker',       desc:'Assigned emotional or practical responsibility for others.' },
+  { id:'outsider',  name:'Outsider',        desc:'Placed outside the group before choosing to leave it.' },
+  { id:'achiever',  name:'The Achiever',    desc:'Success as the primary assigned identity.' },
+  { id:'rebel',     name:'The Rebel',       desc:'Resistance as role. Opposition as definition.' },
 ];
-
 const SECONDARY_CLASSES = [
-  { id: 'leader',    name: 'Leader',           desc: 'Others follow. The role carries weight.' },
-  { id: 'helper',    name: 'Helper',           desc: 'Present for others. Sometimes absent for self.' },
-  { id: 'performer', name: 'Performer',        desc: 'Identity delivered to an audience.' },
-  { id: 'scholar',   name: 'Scholar',          desc: 'Knowledge as identity. Status through competence.' },
-  { id: 'protector', name: 'Protector',        desc: 'Strength performed or felt. Others depend on it.' },
-  { id: 'skeptic',   name: 'Skeptic',          desc: 'Questioning as reflex. Doubt as protection.' },
-  { id: 'creator',   name: 'Creator',          desc: 'Making as self-expression or escape.' },
-  { id: 'diplomat',  name: 'Diplomat',         desc: 'Conflict avoided. Peace maintained at cost.' },
-  { id: 'loner',     name: 'Loner',            desc: 'Chosen or assigned. Solitude as build.' },
-  { id: 'connector', name: 'Connector',        desc: 'Social glue. Others meet through you.' },
-  { id: 'idealist',  name: 'Idealist',         desc: 'Principles held. Reality resisted.' },
-  { id: 'realist',   name: 'Realist',          desc: 'Expectations managed. Disappointment pre-empted.' },
+  { id:'leader',    name:'Leader',     desc:'Others follow. The role carries weight.' },
+  { id:'helper',    name:'Helper',     desc:'Present for others. Sometimes absent for self.' },
+  { id:'performer', name:'Performer',  desc:'Identity delivered to an audience.' },
+  { id:'scholar',   name:'Scholar',    desc:'Knowledge as identity. Status through competence.' },
+  { id:'protector', name:'Protector',  desc:'Strength performed or felt. Others depend on it.' },
+  { id:'skeptic',   name:'Skeptic',    desc:'Questioning as reflex. Doubt as protection.' },
+  { id:'creator',   name:'Creator',    desc:'Making as self-expression or escape.' },
+  { id:'diplomat',  name:'Diplomat',   desc:'Conflict avoided. Peace maintained at cost.' },
+  { id:'loner',     name:'Loner',      desc:'Chosen or assigned. Solitude as build.' },
+  { id:'connector', name:'Connector',  desc:'Social glue. Others meet through you.' },
+  { id:'idealist',  name:'Idealist',   desc:'Principles held. Reality resisted.' },
+  { id:'realist',   name:'Realist',    desc:'Expectations managed. Disappointment pre-empted.' },
 ];
-
 const ASSIGNED_STATS = [
-  { id: 'trust',      name: 'Trust',       desc: 'How safe the world felt early' },
-  { id: 'autonomy',   name: 'Autonomy',    desc: 'How much choice you were given' },
-  { id: 'belonging',  name: 'Belonging',   desc: 'How included you felt in your early group' },
-  { id: 'visibility', name: 'Visibility',  desc: 'How seen or heard you were' },
+  { id:'trust',     name:'Trust',      desc:'How safe the world felt early' },
+  { id:'autonomy',  name:'Autonomy',   desc:'How much choice you were given' },
+  { id:'belonging', name:'Belonging',  desc:'How included you felt in your early group' },
+  { id:'visibility',name:'Visibility', desc:'How seen or heard you were' },
 ];
-
 const CHOSEN_STATS = [
-  { id: 'resilience', name: 'Resilience',  desc: 'Capacity built through difficulty' },
-  { id: 'empathy',    name: 'Empathy',     desc: 'Developed attention to others' },
-  { id: 'ambition',   name: 'Ambition',    desc: 'Drive cultivated or suppressed' },
-  { id: 'boundary',   name: 'Boundaries',  desc: 'Learned ability to protect self' },
+  { id:'resilience',name:'Resilience', desc:'Capacity built through difficulty' },
+  { id:'empathy',   name:'Empathy',    desc:'Developed attention to others' },
+  { id:'ambition',  name:'Ambition',   desc:'Drive cultivated or suppressed' },
+  { id:'boundary',  name:'Boundaries', desc:'Learned ability to protect self' },
 ];
 
-// State
-let primaryClass = null;
-let secondaryClasses = [];
-let assignedStats = {};
-let chosenStats = {};
-const sessionId = 'RPG-' + Math.random().toString(36).slice(2,4).toUpperCase() + '-' +
-                            Math.random().toString(36).slice(2,4).toUpperCase();
+// ── ENCOUNTERS ──
+// Each encounter: location art, title, narrative, assignedAction, chosenAction
+// Effects: hp/mp deltas, result text, activation type
+const ENCOUNTERS = [
+  {
+    id: 'family',
+    locationKey: 'family_hall',
+    num: 'Encounter 01 / 04',
+    title: 'THE FAMILY OBLIGATION',
+    narrative: `A relative needs something. Not something small. Something that will take time — your time. The kind of request that doesn't acknowledge that you might have other things going. Everyone in the room looks to you without looking at you. <span class="amber">The Primary Class activates before you've decided anything.</span>`,
+    assignedAction: { label:'Take it on. You know this role. You\'ve been running it so long it doesn\'t cost anything to perform.', hpDelta:0, mpDelta:0, type:'assigned', result:`The task lands on you like it always does. Efficient. Automatic. No one notices because no one expected anything else. Your assigned class absorbed the hit before you had time to refuse — which is the same as not being able to refuse. <em>HP intact. MP unchanged. Nothing was chosen.</em>`, deltaText:'HP ±0 · MP ±0 · [ASSIGNED fired automatically]' },
+    chosenAction:  { label:'Redirect it. Name the cost. Say what you can and can't do, and why.', hpDelta:-2, mpDelta:-2, type:'chosen', result:`It costs something. Not just the MP — the slight recalibration of how people in that room now see you. You didn't play the role on cue. That has consequences. But the choice was yours. <em>HP −2 (social friction). MP −2 (deliberate action spent).</em>`, deltaText:'HP −2 · MP −2 · [CHOSEN activated]' },
+  },
+  {
+    id: 'social',
+    locationKey: 'social_arena',
+    num: 'Encounter 02 / 04',
+    title: 'THE PERFORMANCE DEMAND',
+    narrative: `A group expects a version of you. Not the full version — the version that fits the room. You can feel it: the anticipation of a role. Funny, or competent, or cool, or agreeable. <span class="cyan">Someone glances at you and it's already starting.</span> The question is whether you walk into it or step sideways.`,
+    assignedAction: { label:'Give them what they expect. You\'ve done this before. The version they want isn\'t wrong — it\'s just partial.', hpDelta:0, mpDelta:0, type:'assigned', result:`You perform. It lands. No friction, no cost that anyone can see. But the version that showed up was built for this room, not by you. The assigned performance depleted nothing because it runs on a separate track — one that exists whether you want it to or not. <em>HP ±0 · MP ±0 · [ASSIGNED automatic]</em>`, deltaText:'HP ±0 · MP ±0 · [ASSIGNED fired automatically]' },
+    chosenAction:  { label:'Show up differently. Risk the mild confusion of not being what the room predicted.', hpDelta:+2, mpDelta:-2, type:'chosen', result:`It costs MP — the deliberate effort of resisting the script. But something real happened: you introduced friction into the expectation, and survived it. The HP gain is small but real. Authenticity has a stat value. <em>HP +2 · MP −2 · [CHOSEN activated]</em>`, deltaText:'HP +2 · MP −2 · [CHOSEN activated]' },
+  },
+  {
+    id: 'authority',
+    locationKey: 'authority_tower',
+    num: 'Encounter 03 / 04',
+    title: 'THE AUTHORITY ENCOUNTER',
+    narrative: `Someone above you in the structure — a teacher, a parent, a coach, an institution — applies pressure. Not hostile pressure. <span class="amber">The kind that assumes compliance.</span> The kind that doesn't leave much visible room to push back. Your debuff is probably running right now.`,
+    assignedAction: { label:'Comply. Manage the relationship. This is the smart play and you know it.', hpDelta:-3, mpDelta:0, type:'assigned', result:`You comply. The authority is satisfied. But something in the build took a hit — not from the encounter itself, but from the pattern. Every time the assigned response fires here, the gap between what you chose and what happened widens. HP drops from accumulated cost. <em>HP −3 (pattern tax) · MP ±0 · [ASSIGNED]</em>`, deltaText:'HP −3 · MP ±0 · [ASSIGNED — pattern cost]' },
+    chosenAction:  { label:'Push back. Name what you actually think, at some cost to the relationship.', hpDelta:0, mpDelta:-3, type:'chosen', result:`You said something real. It cost MP — significant deliberate effort — and the relationship now has a small crack in it. But the build held. You know what you think, and you said it. That has a different kind of stat value than compliance. <em>HP ±0 · MP −3 · [CHOSEN activated]</em>`, deltaText:'HP ±0 · MP −3 · [CHOSEN activated]' },
+  },
+  {
+    id: 'ambition',
+    locationKey: 'ambition_peak',
+    num: 'Encounter 04 / 04',
+    title: 'THE AMBITION QUESTION',
+    narrative: `You want something. Something specific. But the wanting is complicated by <span class="amber">whose wanting it actually is.</span> Did you arrive at this goal, or were you pointed at it? There's a decision in front of you — one that moves you toward what you say you want. The question the instrument can't answer for you: is the ambition yours, or is it the build's?`,
+    assignedAction: { label:'Pursue it. You\'ve wanted this long enough that the origin doesn\'t matter.', hpDelta:-1, mpDelta:0, type:'assigned', result:`You move toward the goal. But the encounter named something the action couldn't resolve: you still don't know where the wanting came from. The HP cost is small — just the weight of an unanswered question that you'll carry into the boss room. <em>HP −1 · MP ±0 · [ASSIGNED — origin unexamined]</em>`, deltaText:'HP −1 · MP ±0 · [ASSIGNED — origin unexamined]' },
+    chosenAction:  { label:'Stop first. Spend the MP to actually examine where this ambition came from before chasing it.', hpDelta:+1, mpDelta:-2, type:'chosen', result:`You slow down and look at it. The ambition doesn't disappear — but now you know something about it. Whether it changes what you do next is up to you. The HP gain comes from self-knowledge. The MP cost is real. <em>HP +1 · MP −2 · [CHOSEN — examined]</em>`, deltaText:'HP +1 · MP −2 · [CHOSEN activated]' },
+  },
+];
 
+// ── DEATH readings by cause ──
+const DEATH_READINGS = {
+  hp0: `The build ran out of capacity to absorb what the dungeon asked of it. Not because you made wrong choices — because the assigned elements ran on automatic through enough encounters that the cumulative cost eventually hit zero. The dungeon doesn't punish bad decisions. It reveals which parts of the build were actually load-bearing.`,
+  mp_note: `You ran out of Chosen ability early. By the final encounters you were operating almost entirely on Assigned. This is not a moral failure — it's information. The build has more inherited structure than deliberate architecture. That's worth knowing before the respec.`,
+};
+
+// ── STATE ──
+let primaryClass = null, secondaryClasses = [], assignedStats = {}, chosenStats = {};
+let hp = 0, mp = 0, maxHp = 0, maxMp = 0;
+let currentEncounter = 0, encountersDone = [];
+let runRecord = { assignedFired:0, chosenFired:0, mpSpent:0, hpLost:0 };
+let bossData = null;
+let sheetData = {};
+const sessionId = 'RPG-' + Math.random().toString(36).slice(2,4).toUpperCase() + '-' + Math.random().toString(36).slice(2,4).toUpperCase();
+
+// ── UTILS ──
 function show(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   window.scrollTo(0, 0);
 }
 
+function blocks(val, max, filledChar, emptyChar, color) {
+  const filled = Math.max(0, Math.round((val / max) * 10));
+  return `<span style="color:${color}">${filledChar.repeat(filled)}</span><span style="opacity:0.25">${emptyChar.repeat(10 - filled)}</span>`;
+}
+
+function updateHud() {
+  document.getElementById('hpVal').textContent = hp + '/' + maxHp;
+  document.getElementById('mpVal').textContent = mp + '/' + maxMp;
+  document.getElementById('hpBlocks').innerHTML = blocks(hp, maxHp, '█', '░', '#c84040');
+  document.getElementById('mpBlocks').innerHTML = blocks(mp, maxMp, '█', '░', '#2a9ab8');
+}
+
+function updateBossHud() {
+  document.getElementById('bossHpVal').textContent = hp + '/' + maxHp;
+  document.getElementById('bossMpVal').textContent = mp + '/' + maxMp;
+  document.getElementById('bossHpBlocks').innerHTML = blocks(hp, maxHp, '█', '░', '#c84040');
+  document.getElementById('bossMpBlocks').innerHTML = blocks(mp, maxMp, '█', '░', '#2a9ab8');
+}
+
+// ── SHEET ──
 function beginSheet() {
   document.getElementById('charId').textContent = sessionId;
   show('sheet');
@@ -1086,86 +1459,52 @@ function beginSheet() {
 }
 
 function buildSheet() {
-  // Primary classes
   const pg = document.getElementById('primaryClassGrid');
   PRIMARY_CLASSES.forEach(c => {
     const card = document.createElement('div');
     card.className = 'class-card assigned-class';
     card.dataset.id = c.id;
-    card.innerHTML = `
-      <div class="class-card-badge">Assigned</div>
-      <div class="class-card-icon">${ICONS[c.id] || ''}</div>
-      <div class="class-card-name">${c.name}</div>
-      <div class="class-card-desc">${c.desc}</div>
-    `;
+    card.innerHTML = `<div class="class-card-badge">Assigned</div><div class="class-card-icon">${ICONS[c.id]||''}</div><div class="class-card-name">${c.name}</div><div class="class-card-desc">${c.desc}</div>`;
     card.addEventListener('click', () => selectPrimary(c.id, card));
     pg.appendChild(card);
   });
 
-  // Secondary classes
   const sg = document.getElementById('secondaryClassGrid');
   SECONDARY_CLASSES.forEach(c => {
     const card = document.createElement('div');
     card.className = 'class-card chosen-class';
     card.dataset.id = c.id;
-    card.innerHTML = `
-      <div class="class-card-icon">${ICONS[c.id] || ''}</div>
-      <div class="class-card-name">${c.name}</div>
-      <div class="class-card-desc">${c.desc}</div>
-    `;
+    card.innerHTML = `<div class="class-card-icon">${ICONS[c.id]||''}</div><div class="class-card-name">${c.name}</div><div class="class-card-desc">${c.desc}</div>`;
     card.addEventListener('click', () => toggleSecondary(c.id, card));
     sg.appendChild(card);
   });
 
-  // Assigned stats
   const ag = document.getElementById('assignedStatsGrid');
-  ASSIGNED_STATS.forEach(s => {
-    assignedStats[s.id] = 5;
-    ag.appendChild(buildStatRow(s, true));
-  });
+  ASSIGNED_STATS.forEach(s => { assignedStats[s.id] = 5; ag.appendChild(buildStatRow(s, true)); });
 
-  // Chosen stats
   const cg = document.getElementById('chosenStatsGrid');
-  CHOSEN_STATS.forEach(s => {
-    chosenStats[s.id] = 5;
-    cg.appendChild(buildStatRow(s, false));
-  });
+  CHOSEN_STATS.forEach(s => { chosenStats[s.id] = 5; cg.appendChild(buildStatRow(s, false)); });
 }
 
 function buildStatRow(stat, isAssigned) {
   const row = document.createElement('div');
   row.className = 'stat-row';
-
-  const name = document.createElement('div');
-  name.className = 'stat-name';
-  name.textContent = stat.name;
-
-  const barWrap = document.createElement('div');
-  barWrap.className = 'stat-bar-wrap';
-
+  const name = document.createElement('div'); name.className = 'stat-name'; name.textContent = stat.name;
+  const barWrap = document.createElement('div'); barWrap.className = 'stat-bar-wrap';
   const fill = document.createElement('div');
   fill.className = 'stat-bar-fill' + (isAssigned ? ' assigned-fill' : '');
-  fill.style.width = '50%';
-  fill.id = `bar-${stat.id}`;
-
+  fill.style.width = '50%'; fill.id = 'bar-' + stat.id;
   const slider = document.createElement('input');
-  slider.type = 'range'; slider.min = 1; slider.max = 10; slider.value = 5;
-  slider.className = 'stat-slider';
+  slider.type='range'; slider.min=1; slider.max=10; slider.value=5; slider.className='stat-slider';
   slider.addEventListener('input', e => {
     const val = parseInt(e.target.value);
-    fill.style.width = (val * 10) + '%';
-    valEl.textContent = val;
-    if (isAssigned) assignedStats[stat.id] = val;
-    else chosenStats[stat.id] = val;
+    fill.style.width = (val*10)+'%'; valEl.textContent = val;
+    if (isAssigned) assignedStats[stat.id]=val; else chosenStats[stat.id]=val;
   });
-
-  barWrap.appendChild(fill);
-  barWrap.appendChild(slider);
-
+  barWrap.appendChild(fill); barWrap.appendChild(slider);
   const valEl = document.createElement('div');
   valEl.className = 'stat-val' + (isAssigned ? ' assigned-val' : '');
   valEl.textContent = '5';
-
   row.appendChild(name); row.appendChild(barWrap); row.appendChild(valEl);
   return row;
 }
@@ -1173,244 +1512,453 @@ function buildStatRow(stat, isAssigned) {
 function selectPrimary(id, card) {
   document.querySelectorAll('#primaryClassGrid .class-card').forEach(c => {
     c.classList.remove('selected');
-    c.querySelector('.class-card-badge') && (c.querySelector('.class-card-badge').textContent = 'Assigned');
+    if (c.querySelector('.class-card-badge')) c.querySelector('.class-card-badge').textContent = 'Assigned';
   });
-  primaryClass = id;
-  card.classList.add('selected');
+  primaryClass = id; card.classList.add('selected');
   const badge = card.querySelector('.class-card-badge');
   if (badge) badge.textContent = '✓ Selected';
   checkSubmit();
 }
 
 function toggleSecondary(id, card) {
-  if (secondaryClasses.includes(id)) {
-    secondaryClasses = secondaryClasses.filter(c => c !== id);
-    card.classList.remove('selected');
-  } else {
-    if (secondaryClasses.length >= 3) return;
-    secondaryClasses.push(id);
-    card.classList.add('selected');
-  }
+  if (secondaryClasses.includes(id)) { secondaryClasses=secondaryClasses.filter(c=>c!==id); card.classList.remove('selected'); }
+  else { if(secondaryClasses.length>=3)return; secondaryClasses.push(id); card.classList.add('selected'); }
   checkSubmit();
 }
 
 function checkSubmit() {
-  const hasCore = document.getElementById('coreQuestion').value.trim().length >= 30;
-  const hasBuff = document.getElementById('buffField').value.trim().length >= 10;
-  const hasDebuff = document.getElementById('debuffField').value.trim().length >= 10;
-  const hasInvAssigned = document.getElementById('inventoryAssigned').value.trim().length >= 10;
-  const hasInvChosen = document.getElementById('inventoryChosen').value.trim().length >= 10;
-  const hasQuest = document.getElementById('questField').value.trim().length >= 10;
-  const hasPrimary = !!primaryClass;
-
+  const hasCore    = document.getElementById('coreQuestion').value.trim().length >= 30;
+  const hasBuff    = document.getElementById('buffField').value.trim().length >= 10;
+  const hasDebuff  = document.getElementById('debuffField').value.trim().length >= 10;
+  const hasInvA    = document.getElementById('inventoryAssigned').value.trim().length >= 10;
+  const hasInvC    = document.getElementById('inventoryChosen').value.trim().length >= 10;
+  const hasQuest   = document.getElementById('questField').value.trim().length >= 10;
   const hint = document.getElementById('coreHint');
-  const coreVal = document.getElementById('coreQuestion').value.trim().length;
-  hint.textContent = coreVal < 30 ? 'keep going' : '';
-
-  document.getElementById('submitBtn').disabled = !(
-    hasPrimary && hasCore && hasBuff && hasDebuff &&
-    hasInvAssigned && hasInvChosen && hasQuest
-  );
+  hint.textContent = document.getElementById('coreQuestion').value.trim().length < 30 ? 'keep going' : '';
+  document.getElementById('submitBtn').disabled = !(primaryClass && hasCore && hasBuff && hasDebuff && hasInvA && hasInvC && hasQuest);
 }
 
-// ── SUBMIT ──
-async function submitSheet() {
-  document.getElementById('progFill').style.width = '100%';
-  show('reading');
+// ── ENTER DUNGEON ──
+function enterDungeon() {
+  // Snapshot sheet data
+  const primaryName    = PRIMARY_CLASSES.find(c=>c.id===primaryClass)?.name || '—';
+  const secondaryNames = secondaryClasses.map(id=>SECONDARY_CLASSES.find(c=>c.id===id)?.name).join(', ')||'None';
+  sheetData = {
+    primaryClass, primaryName, secondaryClasses, secondaryNames,
+    assignedStats: {...assignedStats}, chosenStats: {...chosenStats},
+    inventoryAssigned: document.getElementById('inventoryAssigned').value.trim(),
+    inventoryChosen:   document.getElementById('inventoryChosen').value.trim(),
+    buff:   document.getElementById('buffField').value.trim(),
+    debuff: document.getElementById('debuffField').value.trim(),
+    quest:  document.getElementById('questField').value.trim(),
+    respec: document.getElementById('respecField').value.trim(),
+    core:   document.getElementById('coreQuestion').value.trim(),
+  };
 
-  const primaryName = PRIMARY_CLASSES.find(c => c.id === primaryClass)?.name || '—';
-  const secondaryNames = secondaryClasses.map(id => SECONDARY_CLASSES.find(c => c.id === id)?.name).join(', ') || 'None';
+  // Calculate HP & MP
+  const resilience = chosenStats.resilience || 5;
+  const boundary   = chosenStats.boundary   || 5;
+  const adaptability = chosenStats.ambition  || 5;
+  maxHp = Math.round((resilience + boundary) / 2) + 4;
+  maxMp = adaptability + (secondaryClasses.length * 2);
+  hp = maxHp; mp = maxMp;
+  runRecord = { assignedFired:0, chosenFired:0, mpSpent:0, hpLost:0 };
+  currentEncounter = 0;
+  encountersDone = [];
 
-  const assignedStatStr = ASSIGNED_STATS.map(s => `${s.name}: ${assignedStats[s.id]}/10`).join(', ');
-  const chosenStatStr   = CHOSEN_STATS.map(s =>   `${s.name}: ${chosenStats[s.id]}/10`).join(', ');
+  document.getElementById('dngSession').textContent = sessionId;
+  document.getElementById('progFill').style.width = '40%';
+  show('dungeon');
+  updateHud();
+  loadEncounter(0);
+}
 
-  const inv_assigned = document.getElementById('inventoryAssigned').value.trim();
-  const inv_chosen   = document.getElementById('inventoryChosen').value.trim();
-  const buff         = document.getElementById('buffField').value.trim();
-  const debuff       = document.getElementById('debuffField').value.trim();
-  const quest        = document.getElementById('questField').value.trim();
-  const respec       = document.getElementById('respecField').value.trim();
-  const core         = document.getElementById('coreQuestion').value.trim();
+// ── ENCOUNTER ENGINE ──
+function loadEncounter(idx) {
+  const enc = ENCOUNTERS[idx];
+  document.getElementById('dngAscii').textContent = ASCII[enc.locationKey] || '';
+  document.getElementById('encNum').textContent = enc.num;
+  document.getElementById('encTitle').textContent = enc.title;
+  document.getElementById('encNarrative').innerHTML = enc.narrative;
 
-  const sheetRecord = `PRIMARY CLASS (Assigned): ${primaryName}
-SECONDARY CLASSES (Chosen): ${secondaryNames}
+  // Reset result/continue
+  const resultEl = document.getElementById('dngResult');
+  resultEl.classList.remove('visible');
+  const continueBtn = document.getElementById('dngContinueBtn');
+  continueBtn.classList.remove('visible');
 
-BASE STATS (Assigned — set by early experience):
-${assignedStatStr}
+  // Build choices
+  const choicesEl = document.getElementById('dngChoices');
+  choicesEl.innerHTML = '';
 
-DEVELOPED STATS (Chosen — built over time):
-${chosenStatStr}
+  const mpDepleted = mp < 2;
 
-INVENTORY (Assigned — given and still carried): ${inv_assigned}
-INVENTORY (Chosen — acquired independently): ${inv_chosen}
+  [enc.assignedAction, enc.chosenAction].forEach((action, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'dng-choice';
+    const isChosen = action.type === 'chosen';
+    const depleted = isChosen && mpDepleted;
 
-BUFF (advantage of this build): ${buff}
-DEBUFF (hidden cost of this build): ${debuff}
+    btn.innerHTML = `
+      <span class="choice-tag ${action.type}${depleted?' depleted':''}">${isChosen ? 'CHOSEN' : 'ASSIGNED'}</span>
+      <span class="choice-text">${action.label}${depleted ? ' <span style="color:#3a4025;font-size:10px">[insufficient MP]</span>' : ''}</span>
+      ${isChosen ? `<span class="choice-cost">${depleted?'—':'−2 MP'}</span>` : ''}
+    `;
+    if (depleted) btn.disabled = true;
+    btn.addEventListener('click', () => resolveChoice(action, enc));
+    choicesEl.appendChild(btn);
+  });
+}
 
-ACTIVE QUEST: ${quest}
-ATTEMPTED RESPEC: ${respec || '[none stated]'}
+function resolveChoice(action, enc) {
+  // Disable all choices
+  document.querySelectorAll('#dngChoices .dng-choice').forEach(b => b.disabled = true);
 
-CORE QUESTION — which parts feel like you, which feel like a levelled role:
-${core}`;
+  // Apply deltas
+  const oldHp = hp, oldMp = mp;
+  hp = Math.max(0, Math.min(maxHp, hp + action.hpDelta));
+  mp = Math.max(0, Math.min(maxMp, mp + action.mpDelta));
 
-  const prompt = `You have just received a completed RPG4LIFE character sheet from a student aged 16–18. RPG4LIFE is an identity instrument that reframes identity as a character build: classes, stats, inventory, buffs, debuffs, quests, and respec attempts.
+  if (action.type === 'assigned') runRecord.assignedFired++;
+  else { runRecord.chosenFired++; runRecord.mpSpent += Math.abs(action.mpDelta); }
+  if (action.hpDelta < 0) runRecord.hpLost += Math.abs(action.hpDelta);
 
-The instrument distinguishes between ASSIGNED elements (inherited, given, not chosen) and CHOSEN elements (built, selected, developed). This distinction is the conceptual core.
+  updateHud();
+  encountersDone.push({ enc: enc.id, choice: action.type, hpBefore:oldHp, hpAfter:hp, mpBefore:oldMp, mpAfter:mp });
 
-Here is the completed sheet:
+  // Show result
+  const resultEl = document.getElementById('dngResult');
+  const headerEl = document.getElementById('dngResultHeader');
+  const textEl   = document.getElementById('dngResultText');
+  const deltaEl  = document.getElementById('dngResultDelta');
 
-${sheetRecord}
+  headerEl.className = 'dng-result-header ' + (action.type === 'assigned' ? 'assigned-result' : 'chosen-result');
+  headerEl.textContent = action.type === 'assigned' ? '// ASSIGNED CLASS ACTIVATED' : '// CHOSEN ABILITY USED';
+  textEl.innerHTML = action.result;
+  deltaEl.innerHTML = `<span class="${action.hpDelta < 0 ? 'delta-hp' : action.hpDelta > 0 ? 'delta-good' : ''}">${action.deltaText}</span>`;
+  resultEl.classList.add('visible');
 
-Your task is to read this build as a structural analysis of how this student's identity was assembled — not to describe their personality, but to identify which roles have become second nature, which carry hidden costs, and where the assigned and chosen elements conflict or reinforce each other.
+  if (hp <= 0) {
+    setTimeout(doDeath, 1200);
+    return;
+  }
 
-The central question of RPG4LIFE: "What feels like personality, and what is a role you have levelled through repetition?"
+  const continueBtn = document.getElementById('dngContinueBtn');
+  continueBtn.classList.add('visible');
+}
 
-Rules:
-1. Read the PRIMARY CLASS carefully — this is the role assigned before consent. How does it interact with the Secondary Classes the student chose? Do the choices reinforce the assignment, resist it, or compensate for it?
-2. Read the STATS as a pattern, not as individual scores. Low Trust + High Resilience tells a different story than High Trust + Low Boundary.
-3. The BUFF/DEBUFF pair is the most revealing entry. What does it say about the cost of this build? Who pays it, and who benefits?
-4. The RESPEC entry — if present — is where the student names what they are trying to change. Name what is making the respec difficult, even if they haven't.
-5. The CORE QUESTION is primary data. Quote or reference their specific language.
-6. Do not use therapeutic language: not 'authentic', not 'journey', not 'growth', not 'healing'.
-7. Do not reassure or praise. Analyse.
-8. Write in second person. Do not begin with 'You'. Enter through something specific in the sheet.
-9. The final sentence should name where the student currently is in their build — not where they should go.
+function nextEncounter() {
+  currentEncounter++;
+  if (currentEncounter >= ENCOUNTERS.length) {
+    startBossSequence();
+    return;
+  }
+  document.getElementById('progFill').style.width = (40 + currentEncounter * 10) + '%';
+  loadEncounter(currentEncounter);
+  window.scrollTo(0,0);
+}
 
-Output format — exactly:
+// ── DEATH ──
+function doDeath() {
+  document.getElementById('deathAscii').textContent = ASCII.death_screen;
+  const lastEnc = encountersDone[encountersDone.length - 1];
+  const encName = ENCOUNTERS.find(e => e.id === lastEnc?.enc)?.title || 'THE DUNGEON';
+  document.getElementById('deathSub').textContent = `// Fell in: ${encName}`;
+  const reading = runRecord.chosenFired === 0
+    ? DEATH_READINGS.mp_note + ' ' + DEATH_READINGS.hp0
+    : DEATH_READINGS.hp0;
+  document.getElementById('deathReading').textContent = reading;
+  document.getElementById('progFill').style.width = '0%';
+  show('death');
+}
 
-HEADLINE:
-[4–8 words. Names the central structural feature of this build. Not a personality type — a pattern.]
+// ── BOSS SEQUENCE ──
+async function startBossSequence() {
+  document.getElementById('progFill').style.width = '75%';
+  show('bossLoading');
 
-READING:
-[200–270 words. Structural analysis. Names which classes dominate, which stats tell a pattern, what the buff/debuff reveals about the cost of this build, where assigned and chosen elements conflict. References the core question directly. Does not resolve.]
+  // Staggered loading lines
+  const lines = ['bl1','bl2','bl3','bl4','bl5'];
+  for (let i = 0; i < lines.length; i++) {
+    await new Promise(r => setTimeout(r, 700));
+    document.getElementById(lines[i]).classList.add('visible');
+  }
 
-SIGNATURE:
-[One sentence. The most specific thing this build reveals about what has become second nature versus what remains a performance. Grounded in their actual sheet.]
+  // Fetch boss from API
+  const respec = sheetData.respec || 'something unnamed';
+  const runSummary = `Assigned fired: ${runRecord.assignedFired} times. Chosen fired: ${runRecord.chosenFired} times. MP spent: ${runRecord.mpSpent}. HP lost: ${runRecord.hpLost}.`;
 
-DISCUSSION:
-Q1: [Derived from the relationship between the assigned primary class and the chosen secondary classes]
-Q2: [Derived from the buff/debuff pair and what it reveals about cost]
-Q3: [Derived from the respec attempt — what it suggests about what the student is trying to become]`;
+  const prompt = `You are generating a FINAL BOSS encounter for RPG4LIFE, an identity instrument for students aged 16–18. The student has just completed a dungeon run based on their character sheet.
+
+STUDENT'S RESPEC ENTRY (the thing they are trying to change about their build):
+"${respec}"
+
+DUNGEON RUN SUMMARY:
+${runSummary}
+Primary class: ${sheetData.primaryName}
+Secondary classes: ${sheetData.secondaryNames}
+Buff: ${sheetData.buff}
+Debuff: ${sheetData.debuff}
+
+Your task: Generate a FINAL BOSS encounter. The boss IS the thing they are trying to respec away from — given form, given a name, given a combat narrative.
+
+Output EXACTLY in this format (no extra text):
+
+BOSS_NAME: [6 words max. The name of what they're fighting. Derived from their respec entry. Not abstract — concrete and personal. e.g. "THE VERSION YOUR FATHER EXPECTED" or "THE NEED TO BE NEEDED" or "THE ROLE THAT OUTLASTED ITS USEFULNESS"]
+
+BOSS_CLASS: [One line. What type of enemy this is. e.g. "Assigned Construct · Self-Reinforcing · Difficult to Unequip"]
+
+BOSS_NARRATIVE: [120–160 words. Second person. Describes the final encounter. This entity knows your build. It uses your assigned stats against you. It has survived every previous respec attempt because it is made from the same source material as you. Do not resolve it. End mid-sentence if needed — the encounter is not over.]
+
+CHOSEN_ACTION: [One sentence. What using a Chosen ability looks like against this specific boss. Concrete, not abstract.]
+
+ASSIGNED_ACTION: [One sentence. What the automatic Assigned response looks like here. The one you've always done.]`;
 
   try {
     const resp = await fetch(PROXY, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1100,
+        model: 'claude-sonnet-4-6',
+        max_tokens: 800,
         messages: [{ role: 'user', content: prompt }]
       })
     });
     const data = await resp.json();
-    const text = data.content.map(b => b.text || '').join('');
+    const text = data.content.map(b=>b.text||'').join('');
+
+    const nameMatch      = text.match(/BOSS_NAME:\s*(.+)/i);
+    const classMatch     = text.match(/BOSS_CLASS:\s*(.+)/i);
+    const narrativeMatch = text.match(/BOSS_NARRATIVE:\s*([\s\S]+?)(?=CHOSEN_ACTION:|$)/i);
+    const chosenMatch    = text.match(/CHOSEN_ACTION:\s*(.+)/i);
+    const assignedMatch  = text.match(/ASSIGNED_ACTION:\s*(.+)/i);
+
+    bossData = {
+      name:      nameMatch?.[1]?.trim()      || 'THE THING YOU ARE TRYING TO CHANGE',
+      bossClass: classMatch?.[1]?.trim()     || 'Assigned Construct · Self-Reinforcing',
+      narrative: narrativeMatch?.[1]?.trim() || 'It knows your build.',
+      chosenText:   chosenMatch?.[1]?.trim()   || 'Use a Chosen ability against it.',
+      assignedText: assignedMatch?.[1]?.trim() || 'Fall back on what you have always done.',
+    };
+  } catch(e) {
+    bossData = {
+      name: 'THE THING YOU ARE TRYING TO CHANGE',
+      bossClass: 'Assigned Construct · Self-Reinforcing · Difficult to Unequip',
+      narrative: `It stands in the boss room exactly as you imagined it — or rather, exactly as you tried not to imagine it. This is the thing you named in the Respec field. It has been here longer than the dungeon. It predates most of your Chosen classes. It knows your Primary Assignment better than you do, because it was built from the same source. Every previous attempt to change it has run into the same wall: you can only respec from the outside, but this thing lives on the inside of the build.`,
+      chosenText: 'Make a deliberate choice that contradicts the pattern — knowing the cost.',
+      assignedText: 'Do what you have always done in this situation.',
+    };
+  }
+
+  await new Promise(r => setTimeout(r, 600));
+  loadBoss();
+}
+
+function loadBoss() {
+  document.getElementById('progFill').style.width = '85%';
+  document.getElementById('bossAscii').textContent = ASCII.boss_sprite;
+  document.getElementById('bossName').textContent = bossData.name;
+  document.getElementById('bossClass').textContent = bossData.bossClass;
+  document.getElementById('bossNarrative').textContent = bossData.narrative;
+  updateBossHud();
+
+  const choicesEl = document.getElementById('bossChoices');
+  choicesEl.innerHTML = '';
+  const mpDepleted = mp < 2;
+
+  const actions = [
+    { type:'assigned', label: bossData.assignedText, hpDelta:-2, mpDelta:0,
+      result:`The automatic response fires. The boss absorbs it — it's seen this move before, because this move is part of what made it. HP cost: the weight of repetition. The encounter isn't over.` },
+    { type:'chosen', label: bossData.chosenText, hpDelta:+1, mpDelta:-2,
+      result:`You spend the MP. The boss staggers — not much, but measurably. A Chosen action against a thing made from Assigned material has real effect. The encounter isn't over either. But something shifted.` },
+  ];
+
+  actions.forEach(action => {
+    const btn = document.createElement('button');
+    btn.className = 'dng-choice';
+    const isChosen = action.type === 'chosen';
+    const depleted = isChosen && mpDepleted;
+    btn.innerHTML = `
+      <span class="choice-tag ${action.type}${depleted?' depleted':''}">${isChosen?'CHOSEN':'ASSIGNED'}</span>
+      <span class="choice-text">${action.label}${depleted?' <span style="color:#3a4025;font-size:10px">[MP depleted]</span>':''}</span>
+      ${isChosen ? `<span class="choice-cost">${depleted?'—':'−2 MP'}</span>` : ''}
+    `;
+    if (depleted) btn.disabled = true;
+    btn.addEventListener('click', () => resolveBossChoice(action));
+    choicesEl.appendChild(btn);
+  });
+
+  show('boss');
+}
+
+function resolveBossChoice(action) {
+  document.querySelectorAll('#bossChoices .dng-choice').forEach(b => b.disabled = true);
+  hp = Math.max(0, Math.min(maxHp, hp + action.hpDelta));
+  mp = Math.max(0, Math.min(maxMp, mp + action.mpDelta));
+  if (action.type==='assigned') runRecord.assignedFired++;
+  else { runRecord.chosenFired++; runRecord.mpSpent += Math.abs(action.mpDelta); }
+  if (action.hpDelta < 0) runRecord.hpLost += Math.abs(action.hpDelta);
+  updateBossHud();
+
+  const resultEl  = document.getElementById('bossResult');
+  const headerEl  = document.getElementById('bossResultHeader');
+  const textEl    = document.getElementById('bossResultText');
+  const deltaEl   = document.getElementById('bossResultDelta');
+
+  headerEl.className = 'dng-result-header ' + (action.type==='assigned' ? 'assigned-result' : 'chosen-result');
+  headerEl.textContent = action.type==='assigned' ? '// ASSIGNED CLASS ACTIVATED' : '// CHOSEN ABILITY USED';
+  textEl.innerHTML = action.result;
+  const deltaStr = `HP ${action.hpDelta>0?'+':''}${action.hpDelta} · MP ${action.mpDelta}`;
+  deltaEl.innerHTML = `<span class="${action.hpDelta<0?'delta-hp':action.hpDelta>0?'delta-good':''}">${deltaStr}</span>`;
+  resultEl.classList.add('visible');
+
+  if (hp <= 0) { setTimeout(doDeath, 1200); return; }
+
+  document.getElementById('bossContinueBtn').classList.add('visible');
+  document.getElementById('bossContinueBtn').onclick = generateFinalReading;
+}
+
+async function generateFinalReading() {
+  document.getElementById('progFill').style.width = '95%';
+  show('finalReading');
+
+  // Title based on outcome
+  const chosenRatio = runRecord.chosenFired / (runRecord.assignedFired + runRecord.chosenFired || 1);
+  let title = 'RUN COMPLETE';
+  if (chosenRatio >= 0.5) title = 'BUILD HELD // PARTIALLY';
+  else if (chosenRatio > 0) title = 'ASSIGNED DOMINANT // CHOSEN PRESENT';
+  else title = 'ASSIGNED ONLY // NO CHOSEN ACTIVATED';
+  document.getElementById('finalTitle').textContent = title;
+
+  // Run record rows
+  const rows = [
+    ['Encounters completed', ENCOUNTERS.length + ' / ' + ENCOUNTERS.length + ' + Boss', ''],
+    ['Assigned class fired', runRecord.assignedFired + ' times', 'amber'],
+    ['Chosen ability used', runRecord.chosenFired + ' times', 'cyan'],
+    ['MP spent (deliberate action)', runRecord.mpSpent, 'cyan'],
+    ['HP lost (cumulative cost)', runRecord.hpLost, 'red'],
+    ['MP remaining at end', mp + ' / ' + maxMp, mp>0?'cyan':'red'],
+  ];
+  const rowsEl = document.getElementById('runRecordRows');
+  rows.forEach(([label, val, cls]) => {
+    const row = document.createElement('div');
+    row.className = 'run-stat-row';
+    row.innerHTML = `<span class="run-stat-label">${label}</span><span class="run-stat-val ${cls}">${val}</span>`;
+    rowsEl.appendChild(row);
+  });
+
+  // AI final reading
+  const assignedStr = ASSIGNED_STATS.map(s=>`${s.name}: ${sheetData.assignedStats[s.id]}/10`).join(', ');
+  const chosenStr   = CHOSEN_STATS.map(s=>`${s.name}: ${sheetData.chosenStats[s.id]}/10`).join(', ');
+  const runLog = encountersDone.map(e=>`${e.enc.toUpperCase()}: chose ${e.choice.toUpperCase()} (HP ${e.hpBefore}→${e.hpAfter}, MP ${e.mpBefore}→${e.mpAfter})`).join('\n');
+
+  const prompt = `You have just received a completed RPG4LIFE run. RPG4LIFE is an identity instrument for students aged 16–18 that reframes identity as a character build and runs it through a dungeon of real-life encounters.
+
+CHARACTER SHEET:
+PRIMARY CLASS (Assigned): ${sheetData.primaryName}
+SECONDARY CLASSES (Chosen): ${sheetData.secondaryNames}
+BASE STATS (Assigned): ${assignedStr}
+DEVELOPED STATS (Chosen): ${chosenStr}
+INVENTORY (Assigned): ${sheetData.inventoryAssigned}
+INVENTORY (Chosen): ${sheetData.inventoryChosen}
+BUFF: ${sheetData.buff}
+DEBUFF: ${sheetData.debuff}
+ACTIVE QUEST: ${sheetData.quest}
+RESPEC ATTEMPT: ${sheetData.respec || '[none stated]'}
+CORE QUESTION: ${sheetData.core}
+
+DUNGEON RUN LOG:
+${runLog}
+Boss: ${bossData?.name || 'RESPEC BOSS'}
+Final HP: ${hp}/${maxHp} · Final MP: ${mp}/${maxMp}
+Assigned fired: ${runRecord.assignedFired} · Chosen fired: ${runRecord.chosenFired} · MP spent: ${runRecord.mpSpent}
+
+Your task: Read this build AND this run together. The run record is behavioural data — it shows which parts of the build actually activated under pressure, regardless of what the sheet claims.
+
+Rules:
+1. The run record is primary. If the student chose Assigned every time, that overrides any self-description of agency.
+2. Read the Primary Class and how it intersected with what the dungeon asked.
+3. The Buff/Debuff pair is the most revealing entry on the sheet.
+4. The Boss encounter names what is hardest to respec. Name why.
+5. Do NOT use therapeutic language. No 'journey', 'authentic', 'healing', 'growth'.
+6. Do NOT reassure. Analyse.
+7. Write in second person. Do not begin with 'You'. Enter through something specific.
+8. Final sentence: where the build currently is. Not where it should go.
+
+Output EXACTLY:
+
+HEADLINE:
+[4–8 words. The central structural feature of this build + run. Not a personality type — a pattern.]
+
+READING:
+[220–280 words. Sheet + run integrated. What the dungeon revealed that the sheet alone couldn't show. References specific encounters if relevant. Names which class dominated. Does not resolve.]
+
+SIGNATURE:
+[One sentence. The most specific thing this run revealed. Grounded in actual data.]
+
+DISCUSSION:
+Q1: [From the relationship between assigned Primary Class and dungeon performance]
+Q2: [From the Buff/Debuff and what the run confirmed about its cost]
+Q3: [From the Boss encounter and what makes the respec difficult]`;
+
+  try {
+    const resp = await fetch(PROXY, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-6',
+        max_tokens:1200,
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    const data = await resp.json();
+    const text = data.content.map(b=>b.text||'').join('');
 
     const headlineMatch  = text.match(/HEADLINE:\s*([\s\S]+?)(?=READING:|$)/i);
     const readingMatch   = text.match(/READING:\s*([\s\S]+?)(?=SIGNATURE:|$)/i);
-    const signatureMatch = text.match(/SIGNATURE:\s*([\s\S]+?)(?=DISCUSSION:|$)/i);
-    const discMatch      = text.match(/DISCUSSION:\s*([\s\S]+)/i);
+    const sigMatch       = text.match(/SIGNATURE:\s*([\s\S]+?)(?=DISCUSSION:|$)/i);
+    const discMatch      = text.match(/DISCUSSION:\s*([\s\S]+?)$/i);
 
-    showResult(
-      headlineMatch  ? headlineMatch[1].trim()  : '—',
-      readingMatch   ? readingMatch[1].trim()   : text,
-      signatureMatch ? signatureMatch[1].trim() : '',
-      discMatch      ? discMatch[1].trim()      : '',
-      { primaryName, secondaryNames, assignedStatStr, chosenStatStr,
-        inv_assigned, inv_chosen, buff, debuff, quest, respec, core }
-    );
-  } catch(err) {
-    showResult('—', 'The build analysis could not be completed. Your character sheet remains.', '', '', {});
-  }
-}
+    document.getElementById('finalHeadline').textContent = headlineMatch?.[1]?.trim() || '—';
+    document.getElementById('finalBody').textContent     = readingMatch?.[1]?.trim()  || '—';
+    document.getElementById('finalSig').textContent      = sigMatch?.[1]?.trim()      || '—';
 
-function showResult(headline, reading, signature, discussion, data) {
-  show('result');
-
-  const now = new Date();
-  document.getElementById('resultStamp').textContent =
-    sessionId + '\n' +
-    now.toLocaleDateString('en-GB') + ' ' +
-    now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-
-  // Build sheet summary
-  const summary = document.getElementById('sheetSummary');
-  summary.innerHTML = '';
-  const sections = [
-    { label: 'Primary Class (Assigned)', value: data.primaryName || '—' },
-    { label: 'Secondary Classes (Chosen)', value: data.secondaryNames || '—' },
-    { label: 'Base Stats (Assigned)', value: data.assignedStatStr || '—' },
-    { label: 'Developed Stats (Chosen)', value: data.chosenStatStr || '—' },
-    { label: 'Inventory — Given', value: data.inv_assigned || '—' },
-    { label: 'Inventory — Acquired', value: data.inv_chosen || '—' },
-    { label: 'Buff', value: data.buff || '—' },
-    { label: 'Debuff', value: data.debuff || '—' },
-    { label: 'Active Quest', value: data.quest || '—' },
-    { label: 'Respec Attempt', value: data.respec || '[none stated]' },
-    { label: 'Core Question', value: data.core || '—' },
-  ];
-
-  sections.forEach(s => {
-    const sec = document.createElement('div');
-    sec.className = 'summary-section';
-    sec.innerHTML = `
-      <div class="summary-header"><div class="summary-header-label">${s.label}</div></div>
-      <div class="summary-body">${s.value}</div>
-    `;
-    summary.appendChild(sec);
-  });
-
-  setTimeout(() => summary.classList.add('visible'), 200);
-
-  setTimeout(() => {
-    document.getElementById('resultRule').classList.add('visible');
-    setTimeout(() => {
-      document.getElementById('portraitLabel').classList.add('visible');
-      document.getElementById('portraitHeadline').textContent = headline;
-      document.getElementById('portraitBody').textContent = reading;
-      document.getElementById('portraitSig').textContent = signature;
-      setTimeout(() => document.getElementById('portraitHeadline').classList.add('visible'), 200);
-      setTimeout(() => document.getElementById('portraitBody').classList.add('visible'), 700);
-      setTimeout(() => document.getElementById('portraitSig').classList.add('visible'), 1500);
-    }, 400);
-  }, 1400);
-
-  if (discussion) {
-    const list = document.getElementById('discList');
-    list.innerHTML = '';
-    discussion.split('\n').filter(l => l.trim()).forEach((line, i) => {
-      const cleaned = line.replace(/^Q\d+:\s*/i, '').trim();
-      if (!cleaned) return;
-      const item = document.createElement('div');
-      item.className = 'disc-item';
-      const num = document.createElement('div');
-      num.className = 'disc-num'; num.textContent = String(i+1).padStart(2,'0');
-      const q = document.createElement('div');
-      q.className = 'disc-q'; q.textContent = cleaned;
-      item.appendChild(num); item.appendChild(q);
-      list.appendChild(item);
-    });
-    setTimeout(() => document.getElementById('discWrap').classList.add('visible'), 3800);
+    if (discMatch?.[1]) {
+      const qs = discMatch[1].trim().split(/\n/).filter(l=>l.trim());
+      const discEl = document.getElementById('finalDisc');
+      qs.forEach(q => {
+        const d = document.createElement('div');
+        d.className = 'disc-q';
+        d.textContent = q.trim();
+        discEl.appendChild(d);
+      });
+    }
+  } catch(e) {
+    document.getElementById('finalHeadline').textContent = 'BUILD ANALYSIS UNAVAILABLE';
+    document.getElementById('finalBody').textContent = 'The run record stands on its own. Assigned fired ' + runRecord.assignedFired + ' times. Chosen fired ' + runRecord.chosenFired + ' times. What that ratio means is the discussion question.';
+    document.getElementById('finalSig').textContent = 'The dungeon ran the build so you could see it from the outside.';
   }
 
-  setTimeout(() => document.getElementById('resultFooter').classList.add('visible'), 4600);
+  document.getElementById('finalAiLoading').style.display = 'none';
+  document.getElementById('finalContent').style.display = 'block';
+  document.getElementById('progFill').style.width = '100%';
 }
 
 function restart() {
   primaryClass = null; secondaryClasses = []; assignedStats = {}; chosenStats = {};
-  ['inventoryAssigned','inventoryChosen','buffField','debuffField',
-   'questField','respecField','coreQuestion'].forEach(id => {
-    document.getElementById(id).value = '';
-  });
-  document.getElementById('primaryClassGrid').innerHTML = '';
-  document.getElementById('secondaryClassGrid').innerHTML = '';
-  document.getElementById('assignedStatsGrid').innerHTML = '';
-  document.getElementById('chosenStatsGrid').innerHTML = '';
-  document.getElementById('sheetSummary').innerHTML = '';
-  document.getElementById('discList').innerHTML = '';
-  document.getElementById('progFill').style.width = '0%';
-  ['sheetSummary','resultRule','portraitLabel','portraitHeadline',
-   'portraitBody','portraitSig','discWrap','resultFooter']
-    .forEach(id => document.getElementById(id).classList.remove('visible'));
+  hp=0; mp=0; maxHp=0; maxMp=0; currentEncounter=0; encountersDone=[]; bossData=null; sheetData={};
+  document.getElementById('primaryClassGrid').innerHTML='';
+  document.getElementById('secondaryClassGrid').innerHTML='';
+  document.getElementById('assignedStatsGrid').innerHTML='';
+  document.getElementById('chosenStatsGrid').innerHTML='';
+  ['inventoryAssigned','inventoryChosen','buffField','debuffField','questField','respecField','coreQuestion'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('submitBtn').disabled=true;
+  document.getElementById('progFill').style.width='0%';
+  document.getElementById('runRecordRows').innerHTML='';
+  document.getElementById('finalDisc').innerHTML='';
+  document.getElementById('finalContent').style.display='none';
+  document.getElementById('finalAiLoading').style.display='block';
+  ['bl1','bl2','bl3','bl4','bl5'].forEach(id=>document.getElementById(id).classList.remove('visible'));
   show('intro');
 }
 </script>
