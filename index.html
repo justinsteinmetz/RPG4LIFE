@@ -297,6 +297,11 @@ input[type=range].stat-slider {
   position: absolute; top: -7px; left: 0; right: 0;
   width: 100%; opacity: 0; cursor: pointer; height: 20px;
 }
+input[type=range].stat-slider:focus-visible {
+  opacity: 0.01; /* just enough to show browser focus ring */
+  outline: 2px solid var(--cyan);
+  outline-offset: 4px;
+}
 .stat-val {
   font-family: 'Share Tech Mono', monospace;
   font-size: 11px;
@@ -1049,7 +1054,7 @@ input[type=range].stat-slider {
         placeholder="What are you working toward, building, or trying to prove?" oninput="checkSubmit()"></textarea>
     </div>
     <div class="rpg-field">
-      <div class="field-label">Attempted respec — something about your build you are trying to change</div>
+      <div class="field-label">Attempted respec — something about your build you are trying to change <span style="color:var(--amber);font-size:9px;letter-spacing:0.06em">[required — this becomes your final boss]</span></div>
       <textarea class="rpg-input chosen-input" id="respecField" rows="2"
         placeholder="A role you are trying to drop. A stat you are trying to raise. What makes the respec difficult?" oninput="checkSubmit()"></textarea>
     </div>
@@ -1224,6 +1229,7 @@ const ICONS = {
   outsider: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect x="6" y="2" width="4" height="2" fill="currentColor"/><rect x="4" y="4" width="2" height="2" fill="currentColor"/><rect x="10" y="4" width="2" height="2" fill="currentColor"/><rect x="3" y="6" width="2" height="4" fill="currentColor"/><rect x="4" y="10" width="2" height="2" fill="currentColor"/><rect x="6" y="12" width="4" height="2" fill="currentColor"/><rect x="10" y="10" width="2" height="2" fill="currentColor"/><rect x="9" y="5" width="5" height="2" fill="currentColor"/><rect x="12" y="7" width="2" height="2" fill="currentColor"/><rect x="9" y="9" width="5" height="2" fill="currentColor"/></svg>`,
   achiever: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect x="4" y="2" width="8" height="2" fill="currentColor"/><rect x="3" y="4" width="2" height="4" fill="currentColor"/><rect x="11" y="4" width="2" height="4" fill="currentColor"/><rect x="4" y="8" width="8" height="2" fill="currentColor"/><rect x="5" y="10" width="6" height="2" fill="currentColor"/><rect x="6" y="12" width="4" height="2" fill="currentColor"/><rect x="5" y="14" width="6" height="2" fill="currentColor"/><rect x="6" y="5" width="4" height="2" fill="currentColor"/></svg>`,
   rebel: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect x="7" y="1" width="4" height="2" fill="currentColor"/><rect x="6" y="3" width="2" height="2" fill="currentColor"/><rect x="5" y="5" width="4" height="2" fill="currentColor"/><rect x="4" y="7" width="6" height="2" fill="currentColor"/><rect x="6" y="9" width="4" height="2" fill="currentColor"/><rect x="7" y="11" width="2" height="4" fill="currentColor"/><rect x="9" y="5" width="2" height="2" fill="currentColor"/><rect x="10" y="7" width="2" height="2" fill="currentColor"/></svg>`,
+  other: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect x="5" y="2" width="6" height="2" fill="currentColor"/><rect x="3" y="4" width="2" height="2" fill="currentColor"/><rect x="11" y="4" width="2" height="2" fill="currentColor"/><rect x="9" y="6" width="2" height="2" fill="currentColor"/><rect x="7" y="8" width="2" height="2" fill="currentColor"/><rect x="7" y="12" width="2" height="2" fill="currentColor"/></svg>`,
   leader: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect x="3" y="2" width="2" height="12" fill="currentColor"/><rect x="5" y="2" width="8" height="2" fill="currentColor"/><rect x="5" y="4" width="8" height="2" fill="currentColor"/><rect x="5" y="6" width="6" height="2" fill="currentColor"/><rect x="13" y="4" width="2" height="4" fill="currentColor"/><rect x="5" y="8" width="8" height="2" fill="currentColor"/></svg>`,
   helper: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect x="6" y="2" width="4" height="2" fill="currentColor"/><rect x="4" y="4" width="8" height="2" fill="currentColor"/><rect x="3" y="6" width="10" height="2" fill="currentColor"/><rect x="4" y="8" width="8" height="2" fill="currentColor"/><rect x="5" y="10" width="6" height="2" fill="currentColor"/><rect x="6" y="12" width="4" height="2" fill="currentColor"/><rect x="7" y="14" width="2" height="1" fill="currentColor"/></svg>`,
   performer: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect x="4" y="2" width="8" height="2" fill="currentColor"/><rect x="2" y="4" width="2" height="6" fill="currentColor"/><rect x="12" y="4" width="2" height="6" fill="currentColor"/><rect x="4" y="10" width="2" height="2" fill="currentColor"/><rect x="10" y="10" width="2" height="2" fill="currentColor"/><rect x="6" y="12" width="4" height="2" fill="currentColor"/><rect x="5" y="6" width="2" height="2" fill="currentColor"/><rect x="9" y="6" width="2" height="2" fill="currentColor"/><rect x="5" y="8" width="6" height="1" fill="currentColor"/></svg>`,
@@ -1340,6 +1346,7 @@ const PRIMARY_CLASSES = [
   { id:'outsider',  name:'Outsider',        desc:'Placed outside the group before choosing to leave it.' },
   { id:'achiever',  name:'The Achiever',    desc:'Success as the primary assigned identity.' },
   { id:'rebel',     name:'The Rebel',       desc:'Resistance as role. Opposition as definition.' },
+  { id:'other',     name:'Other',           desc:'None of these fit. Write your own assigned role below.', freeform:true },
 ];
 const SECONDARY_CLASSES = [
   { id:'leader',    name:'Leader',     desc:'Others follow. The role carries weight.' },
@@ -1464,7 +1471,11 @@ function buildSheet() {
     const card = document.createElement('div');
     card.className = 'class-card assigned-class';
     card.dataset.id = c.id;
-    card.innerHTML = `<div class="class-card-badge">Assigned</div><div class="class-card-icon">${ICONS[c.id]||''}</div><div class="class-card-name">${c.name}</div><div class="class-card-desc">${c.desc}</div>`;
+    if (c.freeform) {
+      card.innerHTML = `<div class="class-card-badge">[ASSIGNED]</div><div class="class-card-icon">${ICONS[c.id]||''}</div><div class="class-card-name">${c.name}</div><div class="class-card-desc">${c.desc}</div><input type="text" class="rpg-input assigned-input other-input" id="otherClassInput" placeholder="Name your assigned role…" style="margin-top:0.5rem;font-size:11px;padding:0.4rem 0.5rem" onclick="event.stopPropagation()" oninput="onOtherInput(event)">`;
+    } else {
+      card.innerHTML = `<div class="class-card-badge">[ASSIGNED]</div><div class="class-card-icon">${ICONS[c.id]||''}</div><div class="class-card-name">${c.name}</div><div class="class-card-desc">${c.desc}</div>`;
+    }
     card.addEventListener('click', () => selectPrimary(c.id, card));
     pg.appendChild(card);
   });
@@ -1496,6 +1507,8 @@ function buildStatRow(stat, isAssigned) {
   fill.style.width = '50%'; fill.id = 'bar-' + stat.id;
   const slider = document.createElement('input');
   slider.type='range'; slider.min=1; slider.max=10; slider.value=5; slider.className='stat-slider';
+  slider.setAttribute('aria-label', stat.name + ' — ' + stat.desc);
+  slider.setAttribute('tabindex', '0');
   slider.addEventListener('input', e => {
     const val = parseInt(e.target.value);
     fill.style.width = (val*10)+'%'; valEl.textContent = val;
@@ -1526,6 +1539,12 @@ function toggleSecondary(id, card) {
   checkSubmit();
 }
 
+function onOtherInput(e) {
+  e.stopPropagation();
+  // If Other card is already selected, update the name used downstream
+  if (primaryClass === 'other') checkSubmit();
+}
+
 function checkSubmit() {
   const hasCore    = document.getElementById('coreQuestion').value.trim().length >= 30;
   const hasBuff    = document.getElementById('buffField').value.trim().length >= 10;
@@ -1533,15 +1552,20 @@ function checkSubmit() {
   const hasInvA    = document.getElementById('inventoryAssigned').value.trim().length >= 10;
   const hasInvC    = document.getElementById('inventoryChosen').value.trim().length >= 10;
   const hasQuest   = document.getElementById('questField').value.trim().length >= 10;
+  const hasRespec  = document.getElementById('respecField').value.trim().length >= 10;
+  const hasOther   = primaryClass !== 'other' || (document.getElementById('otherClassInput')?.value.trim().length >= 3);
   const hint = document.getElementById('coreHint');
   hint.textContent = document.getElementById('coreQuestion').value.trim().length < 30 ? 'keep going' : '';
-  document.getElementById('submitBtn').disabled = !(primaryClass && hasCore && hasBuff && hasDebuff && hasInvA && hasInvC && hasQuest);
+  document.getElementById('submitBtn').disabled = !(primaryClass && hasCore && hasBuff && hasDebuff && hasInvA && hasInvC && hasQuest && hasRespec && hasOther);
 }
 
 // ── ENTER DUNGEON ──
 function enterDungeon() {
   // Snapshot sheet data
-  const primaryName    = PRIMARY_CLASSES.find(c=>c.id===primaryClass)?.name || '—';
+  const otherInput = document.getElementById('otherClassInput')?.value.trim();
+  const primaryName = primaryClass === 'other'
+    ? (otherInput || 'Other (unnamed)')
+    : (PRIMARY_CLASSES.find(c=>c.id===primaryClass)?.name || '—');
   const secondaryNames = secondaryClasses.map(id=>SECONDARY_CLASSES.find(c=>c.id===id)?.name).join(', ')||'None';
   sheetData = {
     primaryClass, primaryName, secondaryClasses, secondaryNames,
@@ -1556,11 +1580,16 @@ function enterDungeon() {
   };
 
   // Calculate HP & MP
+  // HP: average of resilience + boundary, +4 base. Range ~5–14.
+  // MP: ambition (half weight) + secondary class bonus (capped at 4). Range ~4–9.
+  // Cap prevents pure optimisation — choosing 3 secondary classes and maxing ambition
+  // still leaves you with finite deliberate action.
   const resilience = chosenStats.resilience || 5;
   const boundary   = chosenStats.boundary   || 5;
-  const adaptability = chosenStats.ambition  || 5;
+  const ambition   = chosenStats.ambition   || 5;
   maxHp = Math.round((resilience + boundary) / 2) + 4;
-  maxMp = adaptability + (secondaryClasses.length * 2);
+  const classMpBonus = Math.min(secondaryClasses.length * 2, 4); // max +4 from classes
+  maxMp = Math.round(ambition / 2) + classMpBonus + 2;           // range ~4–9
   hp = maxHp; mp = maxMp;
   runRecord = { assignedFired:0, chosenFired:0, mpSpent:0, hpLost:0 };
   currentEncounter = 0;
@@ -1579,7 +1608,15 @@ function loadEncounter(idx) {
   document.getElementById('dngAscii').textContent = ASCII[enc.locationKey] || '';
   document.getElementById('encNum').textContent = enc.num;
   document.getElementById('encTitle').textContent = enc.title;
-  document.getElementById('encNarrative').innerHTML = enc.narrative;
+
+  // On encounter 4, if Assigned has fired 3+ times with no Chosen, surface the pattern
+  let narrative = enc.narrative;
+  if (idx === 3 && runRecord.assignedFired >= 3 && runRecord.chosenFired === 0) {
+    narrative += ` <span class="amber">// The dungeon notes: three encounters. Assigned every time. The pattern is visible from the outside now. Is it visible from the inside?</span>`;
+  } else if (idx === 3 && mp < 2) {
+    narrative += ` <span style="color:#c84040">// MP at critical. Chosen ability is no longer available. The rest of the run is Assigned only.</span>`;
+  }
+  document.getElementById('encNarrative').innerHTML = narrative;
 
   // Reset result/continue
   const resultEl = document.getElementById('dngResult');
@@ -1747,6 +1784,7 @@ ASSIGNED_ACTION: [One sentence. What the automatic Assigned response looks like 
       narrative: `It stands in the boss room exactly as you imagined it — or rather, exactly as you tried not to imagine it. This is the thing you named in the Respec field. It has been here longer than the dungeon. It predates most of your Chosen classes. It knows your Primary Assignment better than you do, because it was built from the same source. Every previous attempt to change it has run into the same wall: you can only respec from the outside, but this thing lives on the inside of the build.`,
       chosenText: 'Make a deliberate choice that contradicts the pattern — knowing the cost.',
       assignedText: 'Do what you have always done in this situation.',
+      archivistFailed: true,
     };
   }
 
@@ -1864,8 +1902,10 @@ INVENTORY (Chosen): ${sheetData.inventoryChosen}
 BUFF: ${sheetData.buff}
 DEBUFF: ${sheetData.debuff}
 ACTIVE QUEST: ${sheetData.quest}
-RESPEC ATTEMPT: ${sheetData.respec || '[none stated]'}
-CORE QUESTION: ${sheetData.core}
+RESPEC ATTEMPT: ${sheetData.respec}
+
+CORE QUESTION (most important entry — the student's own words about what feels genuinely theirs vs. what is a levelled role):
+"${sheetData.core}"
 
 DUNGEON RUN LOG:
 ${runLog}
@@ -1873,7 +1913,7 @@ Boss: ${bossData?.name || 'RESPEC BOSS'}
 Final HP: ${hp}/${maxHp} · Final MP: ${mp}/${maxMp}
 Assigned fired: ${runRecord.assignedFired} · Chosen fired: ${runRecord.chosenFired} · MP spent: ${runRecord.mpSpent}
 
-Your task: Read this build AND this run together. The run record is behavioural data — it shows which parts of the build actually activated under pressure, regardless of what the sheet claims.
+Your task: Read this build AND this run together. The run record is behavioural data — it shows which parts of the build actually activated under pressure, regardless of what the sheet claims. The Core Question is the student's own language about where the assigned/chosen line sits for them. The reading should engage directly with that language — quote or reference it specifically.
 
 Rules:
 1. The run record is primary. If the student chose Assigned every time, that overrides any self-description of agency.
@@ -1934,9 +1974,9 @@ Q3: [From the Boss encounter and what makes the respec difficult]`;
       });
     }
   } catch(e) {
-    document.getElementById('finalHeadline').textContent = 'BUILD ANALYSIS UNAVAILABLE';
-    document.getElementById('finalBody').textContent = 'The run record stands on its own. Assigned fired ' + runRecord.assignedFired + ' times. Chosen fired ' + runRecord.chosenFired + ' times. What that ratio means is the discussion question.';
-    document.getElementById('finalSig').textContent = 'The dungeon ran the build so you could see it from the outside.';
+    document.getElementById('finalHeadline').textContent = 'THE ARCHIVIST FAILED TO WRITE YOUR RECORD';
+    document.getElementById('finalBody').textContent = 'The dungeon remembers the run anyway.\n\nAssigned fired ' + runRecord.assignedFired + ' times. Chosen fired ' + runRecord.chosenFired + ' times. MP spent: ' + runRecord.mpSpent + '. HP remaining: ' + hp + '/' + maxHp + '.\n\nThe ratio is the reading. What it means is the discussion question.';
+    document.getElementById('finalSig').textContent = 'Some records resist being written. That is also information.';
   }
 
   document.getElementById('finalAiLoading').style.display = 'none';
